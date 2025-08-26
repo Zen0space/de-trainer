@@ -112,13 +112,7 @@ export function AthleteHomeScreen() {
         LIMIT 10
       `, [user.id]);
 
-      console.log('📊 Athlete dashboard data:', {
-        trainer: trainerData,
-        workoutCount: workoutCount?.count,
-        recentTestCount: recentTestCount?.count,
-        personalRecords: personalRecords?.count,
-        recentTests: recentTests
-      });
+
 
       setStats({
         totalWorkouts: workoutCount?.count || 0,
@@ -147,7 +141,7 @@ export function AthleteHomeScreen() {
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
-    console.log(`Navigate to ${tab} tab`);
+
   };
 
   // Quick actions for athletes
@@ -497,7 +491,7 @@ export function AthleteHomeScreen() {
                     setActiveTab('workouts');
                   } else {
                     // TODO: Navigate to respective screens
-                    console.log(`Navigate to ${action.title}`);
+
                   }
                 }}
               >

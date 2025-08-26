@@ -84,7 +84,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
         LIMIT 1
       `, [user.id]);
 
-      console.log('👨‍🏫 Current trainer data:', trainer);
+
       setCurrentTrainer(trainer);
 
       // If no current trainer, fetch available trainers
@@ -104,7 +104,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
           LIMIT 20
         `, []);
 
-        console.log('👥 Available trainers:', trainers);
+
         setAvailableTrainers(trainers || []);
       }
 
@@ -179,7 +179,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
 
       if (trainers.length > 0) {
         setSearchResults(trainers);
-        console.log(`🔍 Found ${trainers.length} trainer(s):`, trainers);
+
       } else {
         Alert.alert(
           'No Results', 
@@ -324,7 +324,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
         `Enrollment request from ${user?.full_name || 'athlete'} for ${trainerInfo.trainer_code}`
       ]);
 
-      console.log('✅ Enrollment request created:', result);
+
 
       // Show success message with trainer details
       Alert.alert(
@@ -345,14 +345,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
           }
         }]
       );
-
-      // Log the enrollment request for debugging
-      console.log(`📋 New enrollment request:
-        - Athlete: ${user?.full_name} (ID: ${user?.id})
-        - Trainer: ${trainerInfo.full_name} (ID: ${trainerId}, Code: ${trainerInfo.trainer_code})
-        - Status: pending
-        - Timestamp: ${new Date().toISOString()}
-      `);
 
     } catch (error) {
       console.error('❌ Error creating enrollment request:', error);
@@ -379,7 +371,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
         enrollmentId
       ]);
 
-      console.log('✅ Enrollment request updated:', result);
+
 
       // Show success message with trainer details
       Alert.alert(
@@ -392,7 +384,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
         [{ 
           text: 'OK', 
           onPress: () => {
-            console.log('🔄 Refreshing trainer data after enrollment update');
+
             fetchTrainerData();
           }
         }]
@@ -1495,7 +1487,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                         }}
                         onPress={() => {
                           // TODO: Show all trainers
-                          console.log('Show all trainers');
+
                         }}
                       >
                         <Feather name="chevron-down" size={16} color="#3b82f6" />

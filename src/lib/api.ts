@@ -54,7 +54,7 @@ function convertToAuthUser(userRow: any, trainerRow?: any, athleteRow?: any): Au
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    console.log('🔐 Login attempt for:', credentials.email);
+
     
     // Find user by email
     const userRow = await dbHelpers.get(
@@ -62,20 +62,20 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
       [credentials.email]
     );
 
-    console.log('📋 User found:', userRow);
+
 
     if (!userRow) {
-      console.log('❌ No user found');
+
       return { success: false, error: 'Invalid email or password' };
     }
 
     // Verify password
     const hashedPassword = (userRow as any).password as string;
-    console.log('🔑 Hash from DB:', hashedPassword.substring(0, 15) + '...');
-    console.log('🔑 Input password:', credentials.password);
+
+
     
     const isValidPassword = await verifyPassword(credentials.password, hashedPassword);
-    console.log('✅ Password valid:', isValidPassword);
+
     
     if (!isValidPassword) {
       return { success: false, error: 'Invalid email or password' };

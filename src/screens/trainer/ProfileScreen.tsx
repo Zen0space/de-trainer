@@ -69,7 +69,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
         WHERE u.id = ? AND u.role = 'trainer'
       `, [user.id]);
 
-      console.log('👤 Profile data:', profileData);
+
 
       if (profileData) {
         setProfile(profileData);

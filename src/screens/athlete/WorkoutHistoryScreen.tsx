@@ -79,7 +79,7 @@ export function WorkoutHistoryScreen() {
         ORDER BY tr.test_date DESC, tr.created_at DESC
       `, [user.id]);
 
-      console.log('📊 Test results:', results);
+
       setTestResults(results || []);
 
       // Fetch fitness components with test counts
@@ -97,7 +97,7 @@ export function WorkoutHistoryScreen() {
         ORDER BY fc.name
       `, [user.id]);
 
-      console.log('🏋️ Fitness components:', components);
+
       setFitnessComponents(components || []);
 
     } catch (error) {

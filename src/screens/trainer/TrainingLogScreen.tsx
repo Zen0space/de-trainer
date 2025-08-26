@@ -45,6 +45,8 @@ export function TrainingLogScreen() {
   const { user } = useSession();
   const { width } = useWindowDimensions();
   
+
+  
   // Responsive design
   const isSmallScreen = width < 380;
   const isTablet = width > 600;
@@ -83,6 +85,8 @@ export function TrainingLogScreen() {
       
       setIsLoadingAthletes(true);
       try {
+
+
         // Query for athletes enrolled with this trainer
         const enrolledAthletes = await tursoDbHelpers.all(`
           SELECT 
@@ -98,31 +102,24 @@ export function TrainingLogScreen() {
           ORDER BY u.full_name
         `, [user.id]);
 
-        console.log('📊 Enrolled athletes for trainer:', enrolledAthletes);
         setAthletes(enrolledAthletes || []);
 
-        // Mock fitness components (TODO: fetch from database)
-        const mockComponents: FitnessComponent[] = [
-          { id: 1, name: 'Cardiovascular Endurance', description: 'Heart and lung efficiency' },
-          { id: 2, name: 'Muscular Strength', description: 'Maximum force production' },
-          { id: 3, name: 'Muscular Endurance', description: 'Sustained muscle contractions' },
-          { id: 4, name: 'Flexibility', description: 'Range of motion in joints' },
-          { id: 5, name: 'Body Composition', description: 'Ratio of fat to lean mass' },
-        ];
+        // Fetch fitness components from database
+        const components = await tursoDbHelpers.all(`
+          SELECT id, name, description 
+          FROM fitness_components 
+          ORDER BY name
+        `);
 
-        // Mock tests (TODO: fetch from database)
-        const mockTests: Test[] = [
-          { id: 1, component_id: 1, name: '12-Minute Run', unit: 'meters', description: 'Distance covered in 12 minutes', improvement_direction: 'higher' },
-          { id: 2, component_id: 1, name: 'VO2 Max Test', unit: 'ml/kg/min', description: 'Maximum oxygen consumption', improvement_direction: 'higher' },
-          { id: 3, component_id: 2, name: 'Bench Press 1RM', unit: 'kg', description: 'One repetition maximum', improvement_direction: 'higher' },
-          { id: 4, component_id: 2, name: 'Squat 1RM', unit: 'kg', description: 'One repetition maximum squat', improvement_direction: 'higher' },
-          { id: 5, component_id: 3, name: 'Push-up Test', unit: 'reps', description: 'Maximum push-ups in 1 minute', improvement_direction: 'higher' },
-          { id: 6, component_id: 4, name: 'Sit and Reach', unit: 'cm', description: 'Flexibility measurement', improvement_direction: 'higher' },
-          { id: 7, component_id: 5, name: 'Body Fat %', unit: '%', description: 'Body fat percentage', improvement_direction: 'lower' },
-        ];
+        // Fetch tests from database
+        const testsData = await tursoDbHelpers.all(`
+          SELECT t.id, t.component_id, t.name, t.unit, t.description, t.improvement_direction
+          FROM tests t
+          ORDER BY t.name
+        `);
 
-        setFitnessComponents(mockComponents);
-        setTests(mockTests);
+        setFitnessComponents(components || []);
+        setTests(testsData || []);
       } catch (error) {
         console.error('❌ Error fetching enrolled athletes:', error);
         Alert.alert('Error', 'Failed to load enrolled athletes. Please try again.');
@@ -177,13 +174,60 @@ export function TrainingLogScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Implement API call to save fitness log
-      console.log('Submitting fitness log:', logEntry);
+
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if this is a best record for this athlete and test
+      const existingResults = await tursoDbHelpers.all(`
+        SELECT result_value 
+        FROM test_results 
+        WHERE athlete_id = ? AND test_id = ? 
+        ORDER BY result_value ${logEntry.result_value ? 'DESC' : 'ASC'}
+      `, [logEntry.athlete_id, logEntry.test_id]);
+
+      // Get test info to determine improvement direction
+      const testInfo = tests.find(t => t.id === logEntry.test_id);
+      let isBestRecord = false;
+
+      if (logEntry.result_value && testInfo) {
+        if (existingResults.length === 0) {
+          // First record is always a best record
+          isBestRecord = true;
+        } else {
+          const bestExisting = existingResults[0]?.result_value;
+          if (testInfo.improvement_direction === 'higher') {
+            isBestRecord = logEntry.result_value > bestExisting;
+          } else {
+            isBestRecord = logEntry.result_value < bestExisting;
+          }
+        }
+      }
+
+      // Save the test result
+      const result = await tursoDbHelpers.run(`
+        INSERT INTO test_results (
+          athlete_id, 
+          test_id, 
+          result_value, 
+          result_text, 
+          notes, 
+          test_date, 
+          input_unit, 
+          is_best_record
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        logEntry.athlete_id,
+        logEntry.test_id,
+        logEntry.result_value,
+        logEntry.result_text || null,
+        logEntry.notes || null,
+        logEntry.test_date,
+        logEntry.input_unit || null,
+        isBestRecord
+      ]);
+
+
       
-      Alert.alert('Success', 'Fitness log entry saved successfully!', [
+      Alert.alert('Success', `Fitness log entry saved successfully!${isBestRecord ? ' 🏆 New personal best!' : ''}`, [
         {
           text: 'OK',
           onPress: () => {
@@ -202,7 +246,8 @@ export function TrainingLogScreen() {
         }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to save fitness log entry');
+      console.error('❌ Error saving fitness log:', error);
+      Alert.alert('Error', 'Failed to save fitness log entry. Please try again.');
     } finally {
       setIsLoading(false);
     }

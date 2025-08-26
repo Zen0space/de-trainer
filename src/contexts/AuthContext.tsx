@@ -30,7 +30,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       if (session) {
         try {
-          console.log('🔄 Session found, attempting to restore:', session);
+
           
           // Extract user ID from session token (format: session_userId_timestamp)
           const sessionParts = session.split('_');
@@ -38,22 +38,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             const userId = parseInt(sessionParts[1]);
             
             if (!isNaN(userId)) {
-              console.log('🔄 Restoring session for user ID:', userId);
+
               const response = await refreshUserData(userId);
               
               if (response.success && response.user) {
-                console.log('✅ Session restored successfully:', response.user);
+
                 setUser(response.user);
               } else {
-                console.log('❌ Session validation failed:', response.error);
+
                 setSession(null);
               }
             } else {
-              console.log('❌ Invalid session format, clearing session');
+
               setSession(null);
             }
           } else {
-            console.log('❌ Invalid session token format, clearing session');
+
             setSession(null);
           }
         } catch (error) {
@@ -72,10 +72,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
       const response = await loginUser(credentials);
-      console.log('🔐 AuthContext - Login response:', response);
+
       
       if (response.success && response.user) {
-        console.log('🔐 AuthContext - Setting user:', response.user);
+
         setUser(response.user);
         
         // For now, create a simple session token since we don't have JWT implementation
@@ -83,7 +83,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setSession(simpleToken);
         return response;
       } else {
-        console.log('🔐 AuthContext - Login failed:', response.error);
+
         return response;
       }
     } catch (error) {

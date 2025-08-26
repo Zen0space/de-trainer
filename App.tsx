@@ -12,9 +12,7 @@ import { initializeTursoConnection } from './src/lib/turso-database';
 function MainContent() {
   const { user, logout, isLoading } = useSession();
   
-  // Debug logging
-  console.log('🏠 MainContent - user:', user);
-  console.log('🏠 MainContent - isLoading:', isLoading);
+
   
   // Responsive design calculations
   const { width } = useWindowDimensions();

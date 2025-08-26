@@ -17,6 +17,7 @@ const HTTP_API_URL = getHttpApiUrl(TURSO_DATABASE_URL);
 
 // Execute SQL using Turso HTTP API
 async function executeSql(sql: string, params: any[] = []): Promise<any> {
+  
   const response = await fetch(HTTP_API_URL, {
     method: 'POST',
     headers: {
@@ -160,8 +161,7 @@ export const tursoDbHelpers = {
 // Test connection function
 export async function testTursoConnection(): Promise<boolean> {
   try {
-    const result = await executeSql('SELECT 1 as test');
-    console.log('✅ Turso connection successful:', result);
+    await executeSql('SELECT 1 as test');
     return true;
   } catch (error) {
     console.error('❌ Turso connection failed:', error);
@@ -171,15 +171,9 @@ export async function testTursoConnection(): Promise<boolean> {
 
 // Initialize and test connection
 export async function initializeTursoConnection(): Promise<void> {
-  console.log('🔗 Connecting to Turso database...');
-  console.log('Database URL:', TURSO_DATABASE_URL?.substring(0, 50) + '...');
-  console.log('HTTP API URL:', HTTP_API_URL);
-  
   const isConnected = await testTursoConnection();
   
   if (!isConnected) {
     throw new Error('Failed to connect to Turso database');
   }
-  
-  console.log('✅ Turso database connection established');
 }

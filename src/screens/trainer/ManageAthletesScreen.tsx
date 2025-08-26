@@ -128,8 +128,8 @@ export function ManageAthletesScreen({
         ORDER BY e.requested_at DESC
       `, [user.id]);
 
-      console.log('📊 Approved athletes:', approvedAthletes);
-      console.log('📋 Pending requests:', pendingRequests);
+
+
 
       setAthletes(approvedAthletes || []);
       setEnrollmentRequests(pendingRequests || []);
@@ -197,7 +197,7 @@ export function ManageAthletesScreen({
           })
         ]);
 
-        console.log(`✅ Enrollment ${action} and notification sent to ${enrollment.athlete_name}`);
+
       }
 
       Alert.alert(
@@ -273,7 +273,7 @@ export function ManageAthletesScreen({
             })
           ]);
 
-          console.log('✅ Status updated to viewing and notification created');
+
         } catch (statusError) {
           console.error('⚠️ Error updating status:', statusError);
           // Continue with profile display even if status update fails
@@ -312,7 +312,7 @@ export function ManageAthletesScreen({
         recent_tests: recentTests || []
       };
 
-      console.log('👤 Athlete profile loaded:', athleteProfileData);
+
       setAthleteProfile(athleteProfileData);
       setShowAthleteModal(true);
 

@@ -60,8 +60,8 @@ export function AthleteSettingsScreen() {
 
       setNotifications(userNotifications || []);
       setUnreadCount(unreadNotifications?.count || 0);
-      console.log('📱 Notifications loaded:', userNotifications?.length || 0);
-      console.log('🔔 Unread count:', unreadNotifications?.count || 0);
+
+
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
     } finally {

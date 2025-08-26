@@ -1,6 +1,6 @@
 {
   "name": "de-trainer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -22,7 +22,7 @@
     "expo": "~53.0.20",
     "expo-linear-gradient": "~14.1.5",
     "expo-secure-store": "~14.2.3",
-    "expo-sqlite": "~15.2.14",
+
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-native": "0.79.5",

@@ -74,7 +74,7 @@ export function AthleteProfileScreen({ onBack }: { onBack: () => void }) {
         WHERE u.id = ? AND u.role = 'athlete'
       `, [user.id]);
 
-      console.log('👤 Athlete profile data:', profileData);
+
 
       if (profileData) {
         setProfile(profileData);
@@ -97,7 +97,7 @@ export function AthleteProfileScreen({ onBack }: { onBack: () => void }) {
         LIMIT 1
       `, [user.id]);
 
-      console.log('👨‍🏫 Trainer info:', trainer);
+
       setTrainerInfo(trainer);
 
     } catch (error) {

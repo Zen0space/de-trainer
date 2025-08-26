@@ -154,9 +154,9 @@ export function AthleteDetailsScreen({
         improvement_percentage: improvementPercentage
       };
 
-      console.log('👤 Athlete profile loaded:', profile);
-      console.log('📊 Training logs loaded:', logs?.length || 0);
-      console.log('📈 Training stats:', stats);
+
+
+
 
       setAthleteProfile(profile);
       setTrainingLogs(logs || []);

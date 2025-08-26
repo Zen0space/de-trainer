@@ -51,7 +51,7 @@ export function TrainerHomeScreen() {
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
-    console.log(`Navigate to ${tab} tab`);
+
   };
 
   // Navigation handlers
@@ -336,7 +336,7 @@ export function TrainerHomeScreen() {
                       setShowManageAthletes(true);
                     } else {
                       // TODO: Navigate to respective screens
-                      console.log(`Navigate to ${action.title}`);
+
                     }
                   }}
                 >
@@ -440,7 +440,7 @@ export function TrainerHomeScreen() {
               }}
               onPress={() => {
                 // TODO: Navigate to full activity log
-                console.log('View all activities');
+
               }}
             >
               <Text style={{
