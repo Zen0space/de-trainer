@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, KeyboardAvoidingView, RefreshControl, Dimensions } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
-import { VictoryChart, VictoryLine, VictoryBar, VictoryArea, VictoryAxis, VictoryTheme } from 'victory-native';
+import { VictoryChart, VictoryLine, VictoryBar, VictoryArea, VictoryAxis } from 'victory-native';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 
@@ -768,7 +768,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
 
                     return (
                       <VictoryChart
-                        theme={VictoryTheme.material}
                         width={Math.max(width - (containerPadding * 4), 300)}
                         height={220}
                         padding={{ left: 60, top: 20, right: 40, bottom: 60 }}
@@ -844,7 +843,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
 
                     return (
                       <VictoryChart
-                        theme={VictoryTheme.material}
                         width={Math.max(width - (containerPadding * 4), 300)}
                         height={220}
                         padding={{ left: 60, top: 20, right: 40, bottom: 80 }}

@@ -3,7 +3,7 @@ import { View, Text, Pressable, useWindowDimensions, ScrollView, RefreshControl 
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { tursoDbHelpers } from '../../lib/turso-database';
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter, VictoryTheme } from 'victory-native';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
 
 interface ProgressData {
   id: number;
@@ -452,7 +452,6 @@ export function AthleteProgressScreen() {
 
         <View style={{ alignItems: 'center', marginBottom: 8 }}>
           <VictoryChart
-            theme={VictoryTheme.material}
             width={chartWidth}
             height={200}
             padding={{ left: 60, top: 20, right: 40, bottom: 40 }}
