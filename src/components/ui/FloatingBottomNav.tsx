@@ -2,6 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Pressable, useWindowDimensions, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
+// Import screen components
+import { TrainerReportScreen } from '../../screens/trainer/TrainerReportScreen';
+import { TrainingLogScreen } from '../../screens/trainer/TrainingLogScreen';
+import { SettingsScreen } from '../../screens/trainer/SettingsScreen';
+
 interface FloatingBottomNavProps {
   activeTab: string;
   onTabPress: (tab: string) => void;
@@ -13,6 +18,51 @@ interface NavItem {
   label: string;
   icon: string;
 }
+
+interface RouteConfig {
+  component: React.ComponentType<any>;
+  props?: any;
+}
+
+// Route configurations for trainer screens
+export const trainerRoutes: Record<string, RouteConfig> = {
+  home: {
+    component: View, // Home screen is handled separately in parent component
+    props: {}
+  },
+  training: {
+    component: TrainingLogScreen,
+    props: {}
+  },
+  reports: {
+    component: TrainerReportScreen,
+    props: { onBack: () => {} } // Will be overridden by parent
+  },
+  settings: {
+    component: SettingsScreen,
+    props: {}
+  }
+};
+
+// Route configurations for athlete screens (placeholder for future implementation)
+export const athleteRoutes: Record<string, RouteConfig> = {
+  home: {
+    component: View,
+    props: {}
+  },
+  workouts: {
+    component: View,
+    props: {}
+  },
+  trainer: {
+    component: View,
+    props: {}
+  },
+  settings: {
+    component: View,
+    props: {}
+  }
+};
 
 const trainerNavItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'home' },
@@ -27,6 +77,30 @@ const athleteNavItems: NavItem[] = [
   { id: 'trainer', label: 'Trainer', icon: 'user-check' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
+
+// Helper function to get routes based on user role
+export const getRoutes = (userRole: 'trainer' | 'athlete' = 'trainer') => {
+  return userRole === 'trainer' ? trainerRoutes : athleteRoutes;
+};
+
+// Helper function to render a screen component based on active tab
+export const renderScreenFromRoute = (
+  activeTab: string, 
+  userRole: 'trainer' | 'athlete' = 'trainer',
+  customProps?: any
+) => {
+  const routes = getRoutes(userRole);
+  const route = routes[activeTab];
+  
+  if (!route) {
+    return null;
+  }
+  
+  const Component = route.component;
+  const props = { ...route.props, ...customProps };
+  
+  return <Component {...props} />;
+};
 
 export function FloatingBottomNav({ activeTab, onTabPress, userRole = 'trainer' }: FloatingBottomNavProps) {
   const { width } = useWindowDimensions();

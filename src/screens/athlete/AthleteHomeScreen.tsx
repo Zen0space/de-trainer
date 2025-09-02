@@ -5,8 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { FloatingBottomNav } from '../../components/ui/FloatingBottomNav';
 // Import athlete screens
 import { TrainerConnectionScreen } from './TrainerConnectionScreen';
-// Temporarily commented out to avoid circular dependencies
-// import { WorkoutHistoryScreen } from './WorkoutHistoryScreen';
+import { WorkoutHistoryScreen } from './WorkoutHistoryScreen';
+import { AthleteProgressScreen } from './AthleteProgressScreen';
 import { AthleteSettingsScreen } from './AthleteSettingsScreen';
 import { tursoDbHelpers } from '../../lib/turso-database';
 
@@ -156,7 +156,9 @@ export function AthleteHomeScreen() {
   const renderScreen = () => {
     switch (activeTab) {
       case 'workouts':
-        return renderPlaceholderScreen('Workout History', 'activity', 'View your fitness test results and progress over time.');
+        return <WorkoutHistoryScreen />;
+      case 'progress':
+        return <AthleteProgressScreen />;
       case 'settings':
         return <AthleteSettingsScreen />;
       case 'trainer':
@@ -485,7 +487,9 @@ export function AthleteHomeScreen() {
                   borderColor: '#e5e7eb'
                 }}
                 onPress={() => {
-                  if (action.title === 'My Trainer') {
+                  if (action.title === 'View Progress') {
+                    setActiveTab('progress');
+                  } else if (action.title === 'My Trainer') {
                     setActiveTab('trainer');
                   } else if (action.title === 'Test History') {
                     setActiveTab('workouts');

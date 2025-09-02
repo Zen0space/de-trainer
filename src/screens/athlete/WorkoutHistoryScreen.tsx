@@ -189,8 +189,8 @@ export function WorkoutHistoryScreen() {
       shadowOpacity: 0.05,
       shadowRadius: 4,
       elevation: 2,
-      borderLeftWidth: result.is_best_record ? 4 : 0,
-      borderLeftColor: result.is_best_record ? '#f59e0b' : 'transparent',
+      borderLeftWidth: 0,
+      borderLeftColor: 'transparent',
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
@@ -205,17 +205,17 @@ export function WorkoutHistoryScreen() {
             </Text>
             {result.is_best_record && (
               <View style={{
-                backgroundColor: '#fef3c7',
+                backgroundColor: '#f0fdf4',
                 paddingHorizontal: 8,
                 paddingVertical: 2,
                 borderRadius: 6,
                 flexDirection: 'row',
                 alignItems: 'center'
               }}>
-                <Feather name="award" size={12} color="#f59e0b" />
+                <Feather name="award" size={12} color="#10b981" />
                 <Text style={{
                   fontSize: fontSize - 3,
-                  color: '#f59e0b',
+                  color: '#10b981',
                   fontWeight: '600',
                   marginLeft: 4
                 }}>

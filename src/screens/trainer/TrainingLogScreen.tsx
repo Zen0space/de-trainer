@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Dropdown } from '../../components/ui/Dropdown';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 
 // Types for the training log functionality
 interface Athlete {
@@ -56,6 +57,9 @@ export function TrainingLogScreen() {
   const fontSize = isSmallScreen ? 14 : 16;
   const spacing = isSmallScreen ? 12 : isTablet ? 20 : 16;
 
+  // Keyboard-aware scrolling
+  const { keyboardAvoidingViewProps, scrollViewProps } = useKeyboardAware({ containerPadding });
+
   // State management
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
@@ -77,6 +81,8 @@ export function TrainingLogScreen() {
     test_date: new Date().toISOString().split('T')[0],
     input_unit: ''
   });
+
+
 
   // Fetch enrolled athletes and fitness data
   useEffect(() => {
@@ -262,17 +268,8 @@ export function TrainingLogScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ 
-          padding: containerPadding,
-          paddingBottom: containerPadding + 100 
-        }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled={true}
-      >
+    <KeyboardAvoidingView {...keyboardAvoidingViewProps}>
+      <ScrollView {...scrollViewProps}>
         <View style={{ maxWidth: isTablet ? 800 : 600, alignSelf: 'center', width: '100%' }}>
           
           {/* Header */}
@@ -675,6 +672,6 @@ export function TrainingLogScreen() {
 
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
