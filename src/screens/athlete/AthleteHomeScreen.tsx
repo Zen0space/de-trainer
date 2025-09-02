@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, useWindowDimensions, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { FloatingBottomNav } from '../../components/ui/FloatingBottomNav';
@@ -141,7 +141,24 @@ export function AthleteHomeScreen() {
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
+  };
 
+  // Show Coming Soon alert for Goals feature
+  const showComingSoonAlert = () => {
+    Alert.alert(
+      "🎯 Goals Feature",
+      "We're working hard to bring you an amazing goal-setting and tracking experience! This feature will be available in an upcoming update.\n\nStay tuned for more fitness tracking capabilities!",
+      [
+        {
+          text: "Got it!",
+          style: "default"
+        }
+      ],
+      { 
+        cancelable: true,
+        userInterfaceStyle: 'light'
+      }
+    );
   };
 
   // Quick actions for athletes
@@ -353,21 +370,17 @@ export function AthleteHomeScreen() {
               shadowRadius: 4,
               elevation: 2,
             }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Feather 
-                  name={stats.currentTrainer ? 'user-check' : 'user-x'} 
-                  size={20} 
-                  color={stats.currentTrainer ? '#10b981' : '#ef4444'} 
-                />
-                <Text style={{ 
-                  fontSize: fontSize - 2, 
-                  color: '#6b7280',
-                  marginLeft: 8,
-                  flex: 1
-                }}>
-                  {stats.currentTrainer ? 'Trainer Assigned' : 'No Trainer'}
-                </Text>
-              </View>
+              <Text style={{ 
+                fontSize: 28, 
+                fontWeight: 'bold', 
+                color: stats.currentTrainer ? '#10b981' : '#ef4444', 
+                marginBottom: 4 
+              }}>
+                {stats.currentTrainer ? '1' : '0'}
+              </Text>
+              <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>
+                Trainer Assigned
+              </Text>
             </View>
           </View>
         </View>
@@ -493,9 +506,8 @@ export function AthleteHomeScreen() {
                     setActiveTab('trainer');
                   } else if (action.title === 'Test History') {
                     setActiveTab('workouts');
-                  } else {
-                    // TODO: Navigate to respective screens
-
+                  } else if (action.title === 'Goals') {
+                    showComingSoonAlert();
                   }
                 }}
               >

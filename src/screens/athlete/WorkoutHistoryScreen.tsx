@@ -257,22 +257,20 @@ export function WorkoutHistoryScreen() {
             </Text>
           </View>
           
-          {result.notes && (
-            <View style={{
-              backgroundColor: '#f8fafc',
-              padding: 12,
-              borderRadius: 8,
-              marginBottom: 8
+          <View style={{
+            backgroundColor: '#f8fafc',
+            padding: 12,
+            borderRadius: 8,
+            marginBottom: 8
+          }}>
+            <Text style={{
+              fontSize: fontSize - 1,
+              color: '#374151',
+              fontStyle: 'italic'
             }}>
-              <Text style={{
-                fontSize: fontSize - 1,
-                color: '#374151',
-                fontStyle: 'italic'
-              }}>
-                "{result.notes}"
-              </Text>
-            </View>
-          )}
+              "{result.notes && result.notes !== 'null' && result.notes.trim() !== '' ? result.notes : 'no notes'}"
+            </Text>
+          </View>
           
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{
