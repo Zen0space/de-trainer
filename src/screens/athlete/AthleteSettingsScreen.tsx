@@ -728,8 +728,8 @@ export function AthleteSettingsScreen() {
             <SettingItem
               icon="info"
               title="App Version"
-              subtitle="1.0.0"
-              onPress={() => Alert.alert('Version', 'DE-Trainer v1.0.0')}
+              subtitle="1.3.10"
+              onPress={() => Alert.alert('Version', 'DE-Trainer v1.3.10')}
             />
             <SettingItem
               icon="file-text"

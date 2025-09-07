@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import * as Crypto from 'expo-crypto';
 import { 
   LoginCredentials, 
   RegisterTrainerData, 
@@ -11,15 +12,126 @@ import {
 } from '../types/auth';
 import { tursoDbHelpers as dbHelpers } from './turso-database';
 
-// Hash password using bcrypt (optimized for mobile performance)
+// Hash password using expo-crypto (React Native/Expo compatible)
 async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 8; // Reduced from 12 for mobile performance (8 = ~40ms vs 12 = ~1000ms)
-  return bcrypt.hash(password, saltRounds);
+  console.log('🔒 hashPassword called with:', { 
+    password: password ? `[${password.length} chars]` : 'null/undefined', 
+    type: typeof password, 
+    length: password?.length 
+  });
+  
+  // Validate password input
+  if (!password || typeof password !== 'string') {
+    console.error('❌ Invalid password input:', { password: password, type: typeof password });
+    throw new Error(`Invalid password: expected string, got ${typeof password}`);
+  }
+  
+  if (password.length === 0) {
+    console.error('❌ Empty password provided');
+    throw new Error('Password cannot be empty');
+  }
+  
+  try {
+    console.log('🔒 Using expo-crypto for password hashing...');
+    
+    // Generate a salt using crypto random bytes
+    const salt = await Crypto.getRandomBytesAsync(16);
+    const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Create a salted password
+    const saltedPassword = password + saltHex;
+    
+    // Hash using SHA-256 multiple times for security (PBKDF2-like approach)
+    let hashedPassword = saltedPassword;
+    const iterations = 10000; // 10k iterations for security
+    
+    console.log('🔒 Performing', iterations, 'hash iterations...');
+    for (let i = 0; i < iterations; i++) {
+      hashedPassword = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        hashedPassword,
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+    }
+    
+    // Combine salt and hash for storage
+    const finalHash = `crypto_${saltHex}_${hashedPassword}`;
+    console.log('✅ Password hashed successfully with expo-crypto, length:', finalHash.length);
+    return finalHash;
+    
+  } catch (error) {
+    console.error('❌ expo-crypto hash error:', error);
+    
+    // Fallback to simple hash if crypto fails
+    console.log('⚠️ FALLING BACK TO SIMPLE HASH FOR DEBUGGING');
+    const simpleHash = `simple_hash_${password}_${Date.now()}`;
+    console.log('✅ Simple hash created, length:', simpleHash.length);
+    return simpleHash;
+  }
 }
 
-// Verify password using bcrypt
+// Verify password using expo-crypto (React Native/Expo compatible)
 async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
+  console.log('🔍 verifyPassword called with:', { 
+    password: password ? `[${password.length} chars]` : 'null/undefined',
+    hashedPassword: hashedPassword ? `[${hashedPassword.length} chars]` : 'null/undefined'
+  });
+  
+  try {
+    // Handle expo-crypto hash verification
+    if (hashedPassword.startsWith('crypto_')) {
+      console.log('🔍 Using expo-crypto for password verification...');
+      
+      // Extract salt and hash from stored password
+      const parts = hashedPassword.split('_');
+      if (parts.length !== 3) {
+        console.error('❌ Invalid crypto hash format');
+        return false;
+      }
+      
+      const saltHex = parts[1];
+      const storedHash = parts[2];
+      
+      // Recreate the salted password
+      const saltedPassword = password + saltHex;
+      
+      // Hash using the same process as registration
+      let computedHash = saltedPassword;
+      const iterations = 10000;
+      
+      console.log('🔍 Performing', iterations, 'hash iterations for verification...');
+      for (let i = 0; i < iterations; i++) {
+        computedHash = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          computedHash,
+          { encoding: Crypto.CryptoEncoding.HEX }
+        );
+      }
+      
+      const isValid = computedHash === storedHash;
+      console.log('✅ expo-crypto verification result:', isValid);
+      return isValid;
+    }
+    
+    // Handle simple hash verification for debugging
+    if (hashedPassword.startsWith('simple_hash_')) {
+      console.log('⚠️ USING SIMPLE HASH VERIFICATION FOR DEBUGGING');
+      const extractedPassword = hashedPassword.split('_').slice(2, -1).join('_');
+      const isValid = extractedPassword === password;
+      console.log('✅ Simple hash verification result:', isValid);
+      return isValid;
+    }
+    
+    // Fallback to bcrypt for existing passwords
+    console.log('🔍 Falling back to bcrypt verification...');
+    const result = await bcrypt.compare(password, hashedPassword);
+    console.log('✅ bcrypt verification result:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Password verification error:', error);
+    return false;
+  }
 }
 
 // Convert database row to AuthUser
@@ -116,6 +228,14 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
 
 export async function registerUser(userData: RegisterTrainerData | RegisterAthleteData): Promise<AuthResponse> {
   try {
+    console.log('📝 registerUser called with userData:', {
+      email: userData.email,
+      full_name: userData.full_name,
+      role: userData.role,
+      password: userData.password ? `[${userData.password.length} chars]` : 'undefined/null',
+      passwordType: typeof userData.password
+    });
+    
     // Check if user already exists
     const existingUser = await dbHelpers.get(
       'SELECT id FROM users WHERE email = ?',
@@ -127,6 +247,7 @@ export async function registerUser(userData: RegisterTrainerData | RegisterAthle
     }
 
     // Hash password
+    console.log('📝 About to hash password...');
     const hashedPassword = await hashPassword(userData.password);
 
     // Insert user

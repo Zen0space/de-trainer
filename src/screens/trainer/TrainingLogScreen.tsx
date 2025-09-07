@@ -607,7 +607,7 @@ export function TrainingLogScreen() {
                       color: '#374151',
                       marginBottom: 8
                     }}>
-                      Test Result {logEntry.input_unit && `(${logEntry.input_unit})`}
+                      Test Result{logEntry.input_unit ? ` (${logEntry.input_unit})` : ''}
                     </Text>
                     <Input
                       placeholder={`Enter result in ${logEntry.input_unit}`}
