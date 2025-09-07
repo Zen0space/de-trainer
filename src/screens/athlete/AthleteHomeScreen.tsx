@@ -605,7 +605,7 @@ export function AthleteHomeScreen() {
                       fontSize: fontSize - 2,
                       color: '#6b7280'
                     }}>
-                      {activity.result_text} {activity.is_best_record && '🏆'}
+                      {activity.result_text}{activity.is_best_record ? ' 🏆' : ''}
                     </Text>
                   </View>
                   

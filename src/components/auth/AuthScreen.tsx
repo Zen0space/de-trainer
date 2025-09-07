@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, KeyboardAvoidingView, Platform, Alert, Text, useWindowDimensions, Pressable, ScrollView } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { RegisterTrainerData, RegisterAthleteData } from '../../types/auth';
@@ -7,6 +7,9 @@ import { Input } from '../ui/Input';
 import { Dropdown } from '../ui/Dropdown';
 import { TabView } from '../ui/TabView';
 import { cn } from '../../lib/utils';
+import { useKeyboard } from '../../hooks/useKeyboard';
+import { useKeyboardAware } from '../../hooks/useKeyboardAware';
+import { tursoDbHelpers } from '../../lib/turso-database';
 
 type AuthMode = 'login' | 'register';
 type UserRole = 'trainer' | 'athlete';
@@ -31,6 +34,10 @@ export function AuthScreen() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('athlete');
   
+  // Keyboard detection
+  const keyboard = useKeyboard();
+  const scrollViewRef = useRef<ScrollView>(null);
+  
   // Responsive design calculations
   const { width, height } = useWindowDimensions();
   const isSmallScreen = width < 380;
@@ -48,6 +55,27 @@ export function AuthScreen() {
   const headerSpacing = isSmallScreen ? 24 : isTablet ? 40 : 32; // Reduced header spacing
   const containerWidth = isTablet ? '60%' : '100%';
   const maxContainerWidth = isTablet ? 500 : 400;
+  
+  // Keyboard-aware scrolling
+  const { keyboardAvoidingViewProps, scrollViewProps } = useKeyboardAware({ containerPadding });
+  
+  // Console log keyboard state changes
+  useEffect(() => {
+    console.log('🎹 Keyboard State Changed:', {
+      isVisible: keyboard.isVisible,
+      height: keyboard.height,
+      duration: keyboard.duration,
+      easing: keyboard.easing
+    });
+    
+    if (keyboard.isVisible) {
+      console.log('✅ Keyboard OPENED - Height:', keyboard.height + 'px');
+      console.log('📱 Content MinHeight:', (height + keyboard.height + 100) + 'px - Scrolling ENABLED');
+    } else {
+      console.log('❌ Keyboard CLOSED');
+      console.log('📱 Using flexGrow: 1 - Scrolling DISABLED (content centered)');
+    }
+  }, [keyboard.isVisible, keyboard.height, keyboard.duration, keyboard.easing, height]);
   
   // Experience level options
   const experienceLevels = [
@@ -77,20 +105,74 @@ export function AuthScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateForm = () => {
+  // Validation helper functions
+  const validateUsername = (username: string): string | null => {
+    if (!username) return 'Username is required';
+    if (username.includes(' ')) return 'Username cannot contain spaces';
+    if (username.length < 3) return 'Username must be at least 3 characters';
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) return 'Username can only contain letters, numbers, dots, hyphens, and underscores';
+    return null;
+  };
+
+  const validateTrainerCode = (trainerCode: string): string | null => {
+    if (!trainerCode) return 'Trainer code is required';
+    
+    // Check format: TR followed by exactly 3 digits
+    const trainerCodePattern = /^TR\d{3}$/;
+    if (!trainerCodePattern.test(trainerCode)) {
+      return 'Trainer code must be in format TR### (e.g., TR001, TR002)';
+    }
+    
+    return null;
+  };
+
+  const checkTrainerCodeExists = async (trainerCode: string): Promise<boolean> => {
+    try {
+      const existingTrainer = await tursoDbHelpers.get(
+        'SELECT trainer_code FROM trainers WHERE trainer_code = ?',
+        [trainerCode]
+      );
+      return !!existingTrainer;
+    } catch (error) {
+      console.error('Error checking trainer code:', error);
+      return false; // If error, allow the registration to proceed
+    }
+  };
+
+  const validateForm = async () => {
     const newErrors: Record<string, string> = {};
     
     if (authMode === 'login') {
-      if (!loginForm.email) newErrors.email = 'Email is required';
+      // Login validation
+      const usernameError = validateUsername(loginForm.email);
+      if (usernameError) newErrors.email = usernameError;
       if (!loginForm.password) newErrors.password = 'Password is required';
     } else {
-      if (!registerForm.email) newErrors.email = 'Email is required';
+      // Registration validation
+      const usernameError = validateUsername(registerForm.email);
+      if (usernameError) newErrors.email = usernameError;
+      
       if (!registerForm.password) newErrors.password = 'Password is required';
+      if (registerForm.password && registerForm.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+      
       if (!registerForm.full_name) newErrors.full_name = 'Full name is required';
       
       if (registerForm.role === 'trainer') {
-        if (!registerForm.trainer_code) newErrors.trainer_code = 'Trainer code is required';
+        // Trainer-specific validation
+        const trainerCodeError = validateTrainerCode(registerForm.trainer_code || '');
+        if (trainerCodeError) {
+          newErrors.trainer_code = trainerCodeError;
+        } else {
+          // Check if trainer code already exists
+          const trainerCodeExists = await checkTrainerCodeExists(registerForm.trainer_code || '');
+          if (trainerCodeExists) {
+            newErrors.trainer_code = `Trainer code ${registerForm.trainer_code} is already taken. Please choose a different number.`;
+          }
+        }
       } else {
+        // Athlete-specific validation
         if (!registerForm.sport) newErrors.sport = 'Sport is required';
       }
     }
@@ -100,7 +182,7 @@ export function AuthScreen() {
   };
 
   const handleLogin = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
     
     try {
       const result = await login({ email: loginForm.email, password: loginForm.password });
@@ -113,12 +195,41 @@ export function AuthScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
     
     try {
       const result = await register(registerForm as RegisterTrainerData | RegisterAthleteData);
       if (!result.success) {
         Alert.alert('Registration Failed', result.error || 'Please check your information');
+      } else {
+        // Registration successful - show success message and navigate to login
+        Alert.alert(
+          'Registration Successful!', 
+          'Your account has been created successfully. Please log in with your credentials.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Switch to login mode
+                setAuthMode('login');
+                // Pre-fill login email
+                setLoginForm({
+                  email: registerForm.email,
+                  password: ''
+                });
+                // Clear errors and registration form
+                setErrors({});
+                setRegisterForm({
+                  email: '',
+                  password: '',
+                  full_name: '',
+                  role: 'athlete',
+                });
+                setSelectedRole('athlete');
+              }
+            }
+          ]
+        );
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -137,13 +248,17 @@ export function AuthScreen() {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      {...keyboardAvoidingViewProps}
       className="flex-1 bg-background"
     >
       <ScrollView 
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: containerPadding }}
-        showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
+        {...scrollViewProps}
+        contentContainerStyle={{
+          ...scrollViewProps.contentContainerStyle,
+          flexGrow: 1,
+          justifyContent: 'center'
+        }}
       >
         <View style={{ maxWidth: maxContainerWidth, width: containerWidth }} className="self-center">
           {/* Header */}
@@ -234,13 +349,21 @@ export function AuthScreen() {
                   <>
                     <View>
                       <Input
-                        placeholder="Enter your certification code"
+                        placeholder="Enter your trainer code (e.g., TR001)"
                         value={registerForm.trainer_code || ''}
-                        onChangeText={(text) => setRegisterForm({ ...registerForm, trainer_code: text })}
+                        onChangeText={(text) => {
+                          // Auto-format: ensure TR prefix and uppercase, limit to 5 characters
+                          let formattedCode = text.toUpperCase().substring(0, 5);
+                          if (!formattedCode.startsWith('TR') && formattedCode.length > 0) {
+                            formattedCode = 'TR' + formattedCode.replace(/^TR/i, '');
+                          }
+                          setRegisterForm({ ...registerForm, trainer_code: formattedCode });
+                        }}
                         error={errors.trainer_code}
+                        autoCapitalize="characters"
                       />
                       <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
-                        Required for trainer verification
+                        Format: TR### (e.g., TR001, TR002) - Required for trainer verification
                       </Text>
                     </View>
                     

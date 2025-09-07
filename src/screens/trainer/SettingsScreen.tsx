@@ -127,6 +127,7 @@ export function SettingsScreen() {
     return <ProfileScreen onBack={() => setShowProfile(false)} />;
   }
 
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
       <ScrollView
@@ -195,7 +196,7 @@ export function SettingsScreen() {
             <SettingItem
               icon="user"
               title="Profile"
-              subtitle={`${user?.full_name} • ${user?.email}`}
+              subtitle={`${user?.full_name || 'Unknown'} • ${user?.email || 'No email'}`}
               onPress={() => setShowProfile(true)}
             />
             <SettingItem
@@ -306,8 +307,8 @@ export function SettingsScreen() {
             <SettingItem
               icon="info"
               title="App Version"
-              subtitle="1.0.0"
-              onPress={() => Alert.alert('Version', 'DE-Trainer v1.0.0')}
+              subtitle="1.3.10"
+              onPress={() => Alert.alert('Version', 'DE-Trainer v1.3.10')}
             />
             <SettingItem
               icon="help-circle"
@@ -322,7 +323,7 @@ export function SettingsScreen() {
               onPress={() => Alert.alert('Terms', 'Terms of service coming soon!')}
             />
             <SettingItem
-              icon="shield-check"
+              icon="shield"
               title="Privacy Policy"
               subtitle="Learn how we protect your data"
               onPress={() => Alert.alert('Privacy Policy', 'Privacy policy coming soon!')}

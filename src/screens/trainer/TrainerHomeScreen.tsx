@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, useWindowDimensions, ScrollView, Alert } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { FloatingBottomNav, renderScreenFromRoute, getRoutes } from '../../components/ui/FloatingBottomNav';
@@ -24,6 +24,7 @@ export function TrainerHomeScreen() {
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Responsive design
   const isSmallScreen = width < 380;
@@ -44,17 +45,25 @@ export function TrainerHomeScreen() {
     }
   }, [user?.id]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isRefreshAction = false) => {
     if (!user?.id) return;
     
-    setIsLoadingDashboard(true);
+    if (isRefreshAction) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoadingDashboard(true);
+    }
     try {
+      console.log('🔍 Dashboard Query - Current User ID:', user.id, 'User:', user.full_name);
+      
       // Fetch total enrolled athletes
       const totalAthletesResult = await tursoDbHelpers.get(`
         SELECT COUNT(*) as count
         FROM enrollments e
         WHERE e.trainer_id = ? AND e.status = 'approved'
       `, [user.id]);
+      
+      console.log('📊 Dashboard Query Result - Total Athletes:', totalAthletesResult);
       
       // Fetch active sessions (recent tests in last 7 days)
       const activeSessionsResult = await tursoDbHelpers.get(`
@@ -145,6 +154,7 @@ export function TrainerHomeScreen() {
       Alert.alert('Error', 'Failed to load dashboard data. Please try again.');
     } finally {
       setIsLoadingDashboard(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -171,7 +181,15 @@ export function TrainerHomeScreen() {
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
+    // Close any open screens when switching tabs
+    setShowManageAthletes(false);
+    setShowAthleteProfile(false);
+    setSelectedAthleteId(null);
+  };
 
+  // Handle pull-to-refresh
+  const onRefresh = () => {
+    fetchDashboardData(true);
   };
 
   // Navigation handlers
@@ -284,6 +302,14 @@ export function TrainerHomeScreen() {
           paddingBottom: containerPadding + bottomNavHeight 
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={['#3b82f6']}
+            tintColor="#3b82f6"
+          />
+        }
       >
         <View style={{ maxWidth: isTablet ? 800 : 600, alignSelf: 'center', width: '100%' }}>
           
@@ -459,9 +485,18 @@ export function TrainerHomeScreen() {
                       setShowManageAthletes(true);
                     } else if (action.title === 'View Analytics') {
                       setActiveTab('reports');
-                    } else {
-                      // TODO: Navigate to respective screens
-
+                    } else if (action.title === 'Create Workout') {
+                      Alert.alert(
+                        'Create Workout',
+                        'Workout creation feature is coming soon! Stay tuned for updates.',
+                        [{ text: 'OK' }]
+                      );
+                    } else if (action.title === 'Schedule Session') {
+                      Alert.alert(
+                        'Schedule Session',
+                        'Session scheduling feature is coming soon! Stay tuned for updates.',
+                        [{ text: 'OK' }]
+                      );
                     }
                   }}
                 >

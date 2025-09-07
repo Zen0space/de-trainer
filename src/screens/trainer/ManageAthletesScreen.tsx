@@ -93,6 +93,8 @@ export function ManageAthletesScreen({
     }
 
     try {
+      console.log('🔍 ManageAthletes Query - Current User ID:', user.id, 'User:', user.full_name);
+      
       // Fetch approved athletes
       const approvedAthletes = await tursoDbHelpers.all(`
         SELECT 
@@ -108,6 +110,8 @@ export function ManageAthletesScreen({
         WHERE e.trainer_id = ? AND e.status = 'approved'
         ORDER BY u.full_name
       `, [user.id]);
+      
+      console.log('📋 ManageAthletes Query Result - Approved Athletes:', approvedAthletes?.length || 0);
 
       // Fetch pending and viewing enrollment requests
       const pendingRequests = await tursoDbHelpers.all(`
@@ -128,8 +132,7 @@ export function ManageAthletesScreen({
         ORDER BY e.requested_at DESC
       `, [user.id]);
 
-
-
+      console.log('📋 ManageAthletes Query Result - Pending Requests:', pendingRequests?.length || 0);
 
       setAthletes(approvedAthletes || []);
       setEnrollmentRequests(pendingRequests || []);
@@ -612,7 +615,7 @@ export function ManageAthletesScreen({
                 fontStyle: 'italic'
               }}>
                 {statusInfo.description} • Requested {formatDate(request.requested_at)}
-                {request.viewed_at && request.status === 'viewing' && ` • Viewed ${formatDate(request.viewed_at)}`}
+                {request.viewed_at && request.status === 'viewing' ? ` • Viewed ${formatDate(request.viewed_at)}` : ''}
               </Text>
             </View>
 
