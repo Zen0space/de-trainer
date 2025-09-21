@@ -198,7 +198,7 @@ export function AthleteSettingsScreen() {
       <View style={{
         width: 40,
         height: 40,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#f3f3f3',
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
@@ -300,7 +300,7 @@ export function AthleteSettingsScreen() {
         <View style={{
           width: 40,
           height: 40,
-          backgroundColor: notification.is_read ? '#f8fafc' : '#f0f9ff',
+          backgroundColor: notification.is_read ? '#f3f3f3' : '#f0f9ff',
           borderRadius: 20,
           alignItems: 'center',
           justifyContent: 'center',
@@ -353,7 +353,7 @@ export function AthleteSettingsScreen() {
 
   // Notifications Screen
   const NotificationsScreen = () => (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -488,7 +488,7 @@ export function AthleteSettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -505,11 +505,6 @@ export function AthleteSettingsScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
@@ -546,11 +541,6 @@ export function AthleteSettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="user"
@@ -579,11 +569,6 @@ export function AthleteSettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="target"
@@ -618,11 +603,6 @@ export function AthleteSettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="bell"
@@ -662,11 +642,6 @@ export function AthleteSettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="database"
@@ -701,11 +676,6 @@ export function AthleteSettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing * 2,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="help-circle"
@@ -757,11 +727,6 @@ export function AthleteSettingsScreen() {
               justifyContent: 'center',
               borderWidth: 1,
               borderColor: '#fecaca',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
             }}
           >
             <Feather name="log-out" size={20} color="#dc2626" />

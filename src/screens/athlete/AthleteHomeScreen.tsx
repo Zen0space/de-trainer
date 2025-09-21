@@ -189,7 +189,7 @@ export function AthleteHomeScreen() {
   const renderPlaceholderScreen = (title: string, icon: string, description: string) => (
     <View style={{ 
       flex: 1, 
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#f3f3f3',
       padding: containerPadding,
       paddingBottom: containerPadding + bottomNavHeight 
     }}>
@@ -255,13 +255,7 @@ export function AthleteHomeScreen() {
           backgroundColor: 'white',
           padding: cardPadding,
           borderRadius: 16,
-          marginBottom: spacing,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
-        }}>
+          marginBottom: spacing,        }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
               <Text style={{
@@ -309,13 +303,7 @@ export function AthleteHomeScreen() {
             <View style={{
               backgroundColor: 'white',
               padding: cardPadding,
-              borderRadius: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}>
+              borderRadius: 12,            }}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
                 {stats.totalWorkouts}
               </Text>
@@ -327,13 +315,7 @@ export function AthleteHomeScreen() {
             <View style={{
               backgroundColor: 'white',
               padding: cardPadding,
-              borderRadius: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}>
+              borderRadius: 12,            }}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
                 {stats.recentTestResults}
               </Text>
@@ -345,13 +327,7 @@ export function AthleteHomeScreen() {
             <View style={{
               backgroundColor: 'white',
               padding: cardPadding,
-              borderRadius: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}>
+              borderRadius: 12,            }}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
                 {stats.personalRecords}
               </Text>
@@ -363,13 +339,7 @@ export function AthleteHomeScreen() {
             <View style={{
               backgroundColor: 'white',
               padding: cardPadding,
-              borderRadius: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}>
+              borderRadius: 12,            }}>
               <Text style={{ 
                 fontSize: 28, 
                 fontWeight: 'bold', 
@@ -391,13 +361,7 @@ export function AthleteHomeScreen() {
             backgroundColor: 'white',
             padding: cardPadding,
             borderRadius: 16,
-            marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}>
+            marginBottom: spacing,          }}>
             <Text style={{
               fontSize: fontSize + 2,
               fontWeight: 'bold',
@@ -465,13 +429,7 @@ export function AthleteHomeScreen() {
           backgroundColor: 'white',
           padding: cardPadding,
           borderRadius: 16,
-          marginBottom: spacing,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
-        }}>
+          marginBottom: spacing,        }}>
           <Text style={{
             fontSize: fontSize + 2,
             fontWeight: 'bold',
@@ -492,7 +450,7 @@ export function AthleteHomeScreen() {
                 style={{
                   flex: 1,
                   minWidth: isSmallScreen ? '48%' : 140,
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: '#f3f3f3',
                   padding: 16,
                   borderRadius: 12,
                   alignItems: 'center',
@@ -540,13 +498,7 @@ export function AthleteHomeScreen() {
           backgroundColor: 'white',
           padding: cardPadding,
           borderRadius: 16,
-          marginBottom: spacing,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
-        }}>
+          marginBottom: spacing,        }}>
           <Text style={{
             fontSize: fontSize + 2,
             fontWeight: 'bold',
@@ -622,7 +574,7 @@ export function AthleteHomeScreen() {
                 style={{
                   marginTop: 16,
                   padding: 12,
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: '#f3f3f3',
                   borderRadius: 8,
                   alignItems: 'center'
                 }}
@@ -669,7 +621,7 @@ export function AthleteHomeScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       {renderScreen()}
       
       {/* Floating Bottom Navigation */}

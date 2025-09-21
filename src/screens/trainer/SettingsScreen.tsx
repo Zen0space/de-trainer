@@ -73,7 +73,7 @@ export function SettingsScreen() {
       <View style={{
         width: 40,
         height: 40,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#f3f3f3',
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
@@ -129,7 +129,7 @@ export function SettingsScreen() {
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -146,11 +146,6 @@ export function SettingsScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
@@ -187,11 +182,6 @@ export function SettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="user"
@@ -220,11 +210,6 @@ export function SettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="bell"
@@ -259,11 +244,6 @@ export function SettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="database"
@@ -298,11 +278,6 @@ export function SettingsScreen() {
             borderRadius: 12,
             marginBottom: spacing * 2,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <SettingItem
               icon="info"
@@ -348,11 +323,6 @@ export function SettingsScreen() {
               justifyContent: 'center',
               borderWidth: 1,
               borderColor: '#fecaca',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
             }}
           >
             <Feather name="log-out" size={20} color="#dc2626" />

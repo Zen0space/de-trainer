@@ -4,6 +4,7 @@ export type UserRole = 'trainer' | 'athlete';
 
 export interface User {
   id: number;
+  username: string;
   email: string;
   full_name: string;
   role: UserRole;
@@ -32,11 +33,13 @@ export interface AuthUser extends User {
 }
 
 export interface LoginCredentials {
-  email: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 
 export interface RegisterUserData {
+  username: string;
   email: string;
   password: string;
   full_name: string;
@@ -97,6 +100,7 @@ export interface ApiResponse<T = any> {
 // Database row types (matching Turso schema)
 export interface UserRow {
   id: number;
+  username: string;
   email: string;
   password: string;
   full_name: string;

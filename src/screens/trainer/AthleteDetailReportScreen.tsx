@@ -399,7 +399,7 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f3f3' }}>
         <Feather name="loader" size={32} color="#6b7280" />
         <Text style={{ fontSize: fontSize, color: '#6b7280', marginTop: 16 }}>
           Loading athlete report...
@@ -410,7 +410,7 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
 
   if (!athlete) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', padding: containerPadding }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f3f3', padding: containerPadding }}>
         <Feather name="user-x" size={48} color="#ef4444" />
         <Text style={{ fontSize: fontSize + 2, fontWeight: 'bold', color: '#1f2937', marginTop: 16, marginBottom: 8 }}>
           Athlete Not Found
@@ -439,7 +439,7 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <KeyboardAvoidingView {...keyboardAvoidingViewProps}>
         <ScrollView
           {...scrollViewProps}
@@ -460,11 +460,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                 <Pressable
@@ -579,11 +574,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="activity" size={20} color="#3b82f6" />
@@ -610,11 +600,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="award" size={20} color="#10b981" />
@@ -641,11 +626,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="trending-up" size={20} color="#10b981" />
@@ -676,11 +656,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -737,7 +712,7 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                           height: 220,
                           alignItems: 'center',
                           justifyContent: 'center',
-                          backgroundColor: '#f8fafc',
+                          backgroundColor: '#f3f3f3',
                           borderRadius: 12,
                           borderWidth: 2,
                           borderColor: '#e5e7eb',
@@ -812,11 +787,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                   <Feather name="pie-chart" size={20} color="#8b5cf6" />
@@ -890,11 +860,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                   <Feather name="clock" size={20} color="#10b981" />
@@ -975,11 +940,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                   <Feather name="award" size={20} color="#10b981" />
@@ -1050,11 +1010,6 @@ export function AthleteDetailReportScreen({ athleteId, onBack }: AthleteDetailRe
                 padding: cardPadding * 2,
                 borderRadius: 16,
                 alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{
                   width: 80,

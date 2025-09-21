@@ -442,11 +442,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
       padding: cardPadding,
       borderRadius: 12,
       marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
       borderLeftWidth: isCurrentTrainer ? 4 : 0,
       borderLeftColor: isCurrentTrainer ? '#10b981' : 'transparent',
     }}>
@@ -570,7 +565,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
       <View style={{
         width: 50,
         height: 50,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#f3f3f3',
         borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',
@@ -651,7 +646,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <KeyboardAvoidingView {...keyboardAvoidingViewProps}>
         <ScrollView
           {...scrollViewProps}
@@ -667,11 +662,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable
@@ -720,11 +710,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 200
@@ -747,11 +732,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <Text style={{
                   fontSize: fontSize + 2,
@@ -791,11 +771,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                 padding: cardPadding,
                 borderRadius: 12,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
               }}>
                 <Text style={{
                   fontSize: fontSize + 2,
@@ -812,7 +787,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 12,
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#f3f3f3',
                     borderRadius: 8,
                     marginBottom: 8
                   }}
@@ -885,11 +860,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                   padding: cardPadding,
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
                 }}>
                   <Text style={{
                     fontSize: fontSize + 2,
@@ -1063,11 +1033,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
             }}>
               <Text style={{
                 fontSize: fontSize + 2,
@@ -1152,7 +1117,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
               {/* Progress indicator */}
               <View style={{
                 marginTop: 16,
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f3f3f3',
                 padding: 16,
                 borderRadius: 12
               }}>
@@ -1232,11 +1197,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <Text style={{
                   fontSize: fontSize + 2,
@@ -1365,11 +1325,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'white',
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
                   overflow: 'hidden'
                 }}>
                   <View style={{
@@ -1433,11 +1388,6 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'white',
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
                   overflow: 'hidden'
                 }}>
                   <View style={{
@@ -1480,7 +1430,7 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
                       <Pressable
                         style={{
                           padding: 16,
-                          backgroundColor: '#f8fafc',
+                          backgroundColor: '#f3f3f3',
                           alignItems: 'center',
                           flexDirection: 'row',
                           justifyContent: 'center'

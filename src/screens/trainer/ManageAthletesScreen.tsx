@@ -93,7 +93,6 @@ export function ManageAthletesScreen({
     }
 
     try {
-      console.log('🔍 ManageAthletes Query - Current User ID:', user.id, 'User:', user.full_name);
       
       // Fetch approved athletes
       const approvedAthletes = await tursoDbHelpers.all(`
@@ -110,8 +109,6 @@ export function ManageAthletesScreen({
         WHERE e.trainer_id = ? AND e.status = 'approved'
         ORDER BY u.full_name
       `, [user.id]);
-      
-      console.log('📋 ManageAthletes Query Result - Approved Athletes:', approvedAthletes?.length || 0);
 
       // Fetch pending and viewing enrollment requests
       const pendingRequests = await tursoDbHelpers.all(`
@@ -131,8 +128,6 @@ export function ManageAthletesScreen({
         WHERE e.trainer_id = ? AND e.status IN ('pending', 'viewing')
         ORDER BY e.requested_at DESC
       `, [user.id]);
-
-      console.log('📋 ManageAthletes Query Result - Pending Requests:', pendingRequests?.length || 0);
 
       setAthletes(approvedAthletes || []);
       setEnrollmentRequests(pendingRequests || []);
@@ -378,11 +373,6 @@ export function ManageAthletesScreen({
         padding: cardPadding,
         borderRadius: 12,
         marginBottom: spacing,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -521,11 +511,6 @@ export function ManageAthletesScreen({
         padding: cardPadding,
         borderRadius: 12,
         marginBottom: spacing,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
         borderLeftWidth: 4,
         borderLeftColor: statusInfo.borderColor,
       }}>
@@ -783,7 +768,7 @@ export function ManageAthletesScreen({
         presentationStyle="pageSheet"
         onRequestClose={() => setShowAthleteModal(false)}
       >
-        <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+        <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{ 
@@ -798,11 +783,6 @@ export function ManageAthletesScreen({
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <Pressable
@@ -872,11 +852,6 @@ export function ManageAthletesScreen({
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
             }}>
               <Text style={{
                 fontSize: fontSize + 1,
@@ -951,11 +926,6 @@ export function ManageAthletesScreen({
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
             }}>
               <Text style={{
                 fontSize: fontSize + 1,
@@ -1009,11 +979,6 @@ export function ManageAthletesScreen({
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
               }}>
                 <Text style={{
                   fontSize: fontSize + 1,
@@ -1091,11 +1056,6 @@ export function ManageAthletesScreen({
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
               }}>
                 <Text style={{
                   fontSize: fontSize + 1,
@@ -1140,11 +1100,6 @@ export function ManageAthletesScreen({
                     paddingVertical: 16,
                     borderRadius: 12,
                     alignItems: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
                   }}
                 >
                   <Text style={{ color: 'white', fontWeight: '600', fontSize: fontSize + 1 }}>
@@ -1173,11 +1128,6 @@ export function ManageAthletesScreen({
                     paddingVertical: 16,
                     borderRadius: 12,
                     alignItems: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
                   }}
                 >
                   <Text style={{ color: 'white', fontWeight: '600', fontSize: fontSize + 1 }}>
@@ -1193,7 +1143,7 @@ export function ManageAthletesScreen({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -1213,11 +1163,6 @@ export function ManageAthletesScreen({
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable
@@ -1266,11 +1211,6 @@ export function ManageAthletesScreen({
             borderRadius: 12,
             marginBottom: spacing,
             flexDirection: 'row',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <TabButton
               id="athletes"

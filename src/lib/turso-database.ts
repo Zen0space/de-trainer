@@ -17,7 +17,6 @@ const HTTP_API_URL = getHttpApiUrl(TURSO_DATABASE_URL);
 
 // Execute SQL using Turso HTTP API
 async function executeSql(sql: string, params: any[] = []): Promise<any> {
-  console.log('🔗 Turso API Call:', { sql: sql.substring(0, 100) + '...', params });
   
   try {
     const response = await fetch(HTTP_API_URL, {
@@ -39,7 +38,6 @@ async function executeSql(sql: string, params: any[] = []): Promise<any> {
       }),
     });
 
-    console.log('🔗 Turso Response Status:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -49,7 +47,6 @@ async function executeSql(sql: string, params: any[] = []): Promise<any> {
 
     // Check if response has content before parsing
     const responseText = await response.text();
-    console.log('🔗 Turso Response Text Length:', responseText.length);
     
     if (!responseText || responseText.trim().length === 0) {
       console.error('❌ Empty response from Turso API');
@@ -65,11 +62,6 @@ async function executeSql(sql: string, params: any[] = []): Promise<any> {
       throw new Error(`Failed to parse Turso API response: ${parseError}`);
     }
     
-    console.log('✅ Turso Response Parsed:', { 
-      hasResults: !!data.results, 
-      resultCount: data.results?.length || 0,
-      hasError: !!data.results?.[0]?.error 
-    });
     
     if (data.results?.[0]?.error) {
       console.error('❌ SQL Error:', data.results[0].error);
@@ -77,11 +69,6 @@ async function executeSql(sql: string, params: any[] = []): Promise<any> {
     }
 
     const result = data.results?.[0]?.response?.result || { rows: [], cols: [], rows_affected: 0, last_insert_rowid: null };
-    console.log('✅ Final Result:', { 
-      rowCount: result.rows?.length || 0, 
-      colCount: result.cols?.length || 0,
-      affected: result.rows_affected || result.affected_row_count || 0 
-    });
     
     return result;
   } catch (error) {
@@ -95,7 +82,6 @@ export const tursoDbHelpers = {
   // Execute a query that returns data (SELECT)
   async get(sql: string, params: any[] = []): Promise<any> {
     try {
-      console.log('🔍 Turso GET Query:', { sql: sql.substring(0, 100) + '...', params });
       const result = await executeSql(sql, params);
       
       // Return the first row or null if no results
@@ -107,10 +93,8 @@ export const tursoDbHelpers = {
         columns.forEach((col: any, index: number) => {
           rowObject[col.name] = row[index]?.value;
         });
-        console.log('✅ Turso GET Result:', { found: true, keys: Object.keys(rowObject) });
         return rowObject;
       }
-      console.log('✅ Turso GET Result:', { found: false });
       return null;
     } catch (error) {
       console.error('❌ Turso get error:', error);
@@ -121,7 +105,6 @@ export const tursoDbHelpers = {
   // Execute a query that returns multiple rows (SELECT)
   async all(sql: string, params: any[] = []): Promise<any[]> {
     try {
-      console.log('📋 Turso ALL Query:', { sql: sql.substring(0, 100) + '...', params });
       const result = await executeSql(sql, params);
       
       if (result.rows) {
@@ -133,11 +116,8 @@ export const tursoDbHelpers = {
           });
           return rowObject;
         });
-        console.log('✅ Turso ALL Result:', { count: rows.length, sampleKeys: rows[0] ? Object.keys(rows[0]) : [] });
         return rows;
       }
-      
-      console.log('✅ Turso ALL Result:', { count: 0 });
       return [];
     } catch (error) {
       console.error('❌ Turso all error:', error);

@@ -278,11 +278,6 @@ export function TrainingLogScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               {showLogEntry && (
@@ -341,11 +336,6 @@ export function TrainingLogScreen() {
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
                 alignItems: 'center',
                 justifyContent: 'center',
                 minHeight: 200
@@ -367,11 +357,6 @@ export function TrainingLogScreen() {
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <Text style={{
                   fontSize: fontSize + 2,
@@ -390,7 +375,7 @@ export function TrainingLogScreen() {
                       flexDirection: 'row',
                       alignItems: 'center',
                       padding: 16,
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: '#f3f3f3',
                       borderRadius: 12,
                       marginBottom: 12,
                       borderWidth: 1,
@@ -465,11 +450,6 @@ export function TrainingLogScreen() {
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
                 alignItems: 'center',
                 justifyContent: 'center',
                 minHeight: 300
@@ -544,11 +524,6 @@ export function TrainingLogScreen() {
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
             }}>
               <Text style={{
                 fontSize: fontSize + 2,

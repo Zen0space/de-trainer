@@ -1,12 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, RefreshControl, TextInput } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { useStableTextInput } from '../../hooks/useStableTextInput';
+
+// Stable EditField component using uncontrolled inputs to prevent keyboard dismissal
+const StableEditField = React.memo(({ 
+  label, 
+  value, 
+  initialValue,
+  keyboardType, 
+  autoCapitalize, 
+  placeholder, 
+  error,
+  fontSize,
+  isEditing,
+  onGetValue,
+  icon
+}: {
+  label: string;
+  value: string | null;
+  initialValue: string;
+  keyboardType?: 'default' | 'email-address';
+  autoCapitalize?: 'none' | 'words';
+  placeholder?: string;
+  error?: string;
+  fontSize: number;
+  isEditing: boolean;
+  onGetValue: (getValue: () => string) => void;
+  icon?: string;
+}) => {
+  // Use stable text input hook to prevent keyboard dismissal
+  const stableInput = useStableTextInput({
+    initialValue: initialValue,
+    validateOnBlur: false, // Don't update on blur, only on save button
+  });
+
+  // Provide getValue function to parent component
+  React.useEffect(() => {
+    onGetValue(stableInput.getValue);
+  }, [onGetValue, stableInput.getValue]);
+
+  // Stable style objects using useMemo
+  const containerStyle = useMemo(() => ({
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  }), []);
+
+  const labelStyle = useMemo(() => ({
+    fontSize: fontSize - 2,
+    color: '#6b7280',
+    marginBottom: 8
+  }), [fontSize]);
+
+  const inputStyle = useMemo(() => ({
+    borderWidth: 1,
+    borderColor: error ? '#ef4444' : '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: fontSize,
+    backgroundColor: 'white',
+  }), [error, fontSize]);
+
+  const valueStyle = useMemo(() => ({
+    fontSize: fontSize,
+    fontWeight: '500' as const,
+    color: '#1f2937'
+  }), [fontSize]);
+
+  const errorStyle = useMemo(() => ({
+    color: '#ef4444',
+    fontSize: fontSize - 2,
+    marginTop: 4
+  }), [fontSize]);
+
+  return (
+    <View style={containerStyle}>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: isEditing ? 'flex-start' : 'center',
+      }}>
+        {icon && (
+          <View style={{
+            width: 32,
+            height: 32,
+            backgroundColor: '#f3f3f3',
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+            marginTop: isEditing ? 24 : 0, // Align with input when editing
+          }}>
+            <Feather name={icon as any} size={16} color="#6b7280" />
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={labelStyle}>
+            {label}
+          </Text>
+          {isEditing ? (
+            <View>
+              <TextInput
+                ref={stableInput.inputRef}
+                style={inputStyle}
+                placeholder={placeholder || label}
+                keyboardType={keyboardType || 'default'}
+                autoCapitalize={autoCapitalize || 'words'}
+                {...stableInput.inputProps}
+              />
+              {error && (
+                <Text style={errorStyle}>
+                  {error}
+                </Text>
+              )}
+            </View>
+          ) : (
+            <Text style={valueStyle}>
+              {value || 'Not provided'}
+            </Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+});
 
 interface TrainerProfile {
   // User information
   id: number;
+  username: string;
   email: string;
   full_name: string;
   role: string;
@@ -19,6 +144,13 @@ interface TrainerProfile {
   certification_id: string | null;
   specialization: string | null;
   verification_status: string;
+}
+
+interface EditForm {
+  full_name: string;
+  email: string;
+  certification_id: string;
+  specialization: string;
 }
 
 export function ProfileScreen({ onBack }: { onBack: () => void }) {
@@ -38,6 +170,23 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
   const [profile, setProfile] = useState<TrainerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Edit profile state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm>({
+    full_name: '',
+    email: '',
+    certification_id: '',
+    specialization: '',
+  });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Refs to get values from stable inputs (prevents keyboard dismissal)
+  const getFullNameValue = useRef<() => string>(() => '');
+  const getEmailValue = useRef<() => string>(() => '');
+  const getCertificationIdValue = useRef<() => string>(() => '');
+  const getSpecializationValue = useRef<() => string>(() => '');
 
   // Fetch profile data
   const fetchProfile = async (showRefreshing = false) => {
@@ -54,6 +203,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
       const profileData = await tursoDbHelpers.get(`
         SELECT 
           u.id,
+          u.username,
           u.email,
           u.full_name,
           u.role,
@@ -94,6 +244,108 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
     fetchProfile(true);
   };
 
+  // Simple form handlers
+  const handleEditProfile = () => {
+    if (!profile) return;
+    
+    setEditForm({
+      full_name: profile.full_name,
+      email: profile.email,
+      certification_id: profile.certification_id || '',
+      specialization: profile.specialization || '',
+    });
+    setEditErrors({});
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditErrors({});
+  };
+
+
+  // Validate edit form
+  const validateEditForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!editForm.full_name.trim()) {
+      errors.full_name = 'Full name is required';
+    }
+
+    if (!editForm.email.trim()) {
+      errors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editForm.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+    }
+
+    setEditErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle save profile - gets values from stable inputs to prevent keyboard issues
+  const handleSaveProfile = async () => {
+    // Get current values from stable inputs
+    const currentValues = {
+      full_name: getFullNameValue.current(),
+      email: getEmailValue.current(),
+      certification_id: getCertificationIdValue.current(),
+      specialization: getSpecializationValue.current(),
+    };
+
+    // Update editForm for validation
+    setEditForm(currentValues);
+
+    // Validate with current values
+    const errors: Record<string, string> = {};
+
+    if (!currentValues.full_name.trim()) {
+      errors.full_name = 'Full name is required';
+    }
+
+    if (!currentValues.email.trim()) {
+      errors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(currentValues.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+    }
+
+    setEditErrors(errors);
+    
+    if (Object.keys(errors).length > 0 || !profile) return;
+
+    setIsUpdating(true);
+    try {
+      // Update user information
+      await tursoDbHelpers.run(`
+        UPDATE users 
+        SET full_name = ?, email = ? 
+        WHERE id = ?
+      `, [currentValues.full_name, currentValues.email, profile.id]);
+
+      // Update trainer information
+      await tursoDbHelpers.run(`
+        UPDATE trainers 
+        SET certification_id = ?, specialization = ? 
+        WHERE user_id = ?
+      `, [currentValues.certification_id || null, currentValues.specialization || null, profile.id]);
+
+      // Refresh profile data
+      await fetchProfile();
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -114,7 +366,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
       case 'rejected':
         return { color: '#ef4444', bg: '#fef2f2', text: 'Rejected' };
       default:
-        return { color: '#6b7280', bg: '#f9fafb', text: 'Unknown' };
+        return { color: '#6b7280', bg: '#f3f3f3', text: 'Unknown' };
     }
   };
 
@@ -124,11 +376,6 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
       padding: cardPadding,
       borderRadius: 12,
       marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
     }}>
       <Text style={{
         fontSize: fontSize + 2,
@@ -158,7 +405,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
         <View style={{
           width: 32,
           height: 32,
-          backgroundColor: '#f8fafc',
+          backgroundColor: '#f3f3f3',
           borderRadius: 16,
           alignItems: 'center',
           justifyContent: 'center',
@@ -186,9 +433,10 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
     </View>
   );
 
+
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <View style={{
           flex: 1,
           justifyContent: 'center',
@@ -211,7 +459,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
 
   if (!profile) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <View style={{
           flex: 1,
           justifyContent: 'center',
@@ -256,17 +504,18 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
   const verificationStatus = getVerificationStatus(profile.verification_status);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
           padding: containerPadding,
-          paddingBottom: containerPadding + 100 
+          paddingBottom: containerPadding + 100
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ maxWidth: isTablet ? 800 : 600, alignSelf: 'center', width: '100%' }}>
           
@@ -276,11 +525,6 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable
@@ -309,16 +553,48 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
                 </Text>
               </View>
               
-              <Pressable
-                onPress={() => Alert.alert('Edit Profile', 'Edit profile functionality coming soon!')}
-                style={{
-                  padding: 8,
-                  borderRadius: 8,
-                  backgroundColor: '#3b82f6',
-                }}
-              >
-                <Feather name="edit-2" size={20} color="white" />
-              </Pressable>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {isEditing ? (
+                  <>
+                    <Pressable
+                      onPress={handleCancelEdit}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        backgroundColor: '#6b7280',
+                      }}
+                    >
+                      <Feather name="x" size={20} color="white" />
+                    </Pressable>
+                    <Pressable
+                      onPress={handleSaveProfile}
+                      disabled={isUpdating}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        backgroundColor: isUpdating ? '#9ca3af' : '#10b981',
+                      }}
+                    >
+                      {isUpdating ? (
+                        <Feather name="loader" size={20} color="white" />
+                      ) : (
+                        <Feather name="check" size={20} color="white" />
+                      )}
+                    </Pressable>
+                  </>
+                ) : (
+                  <Pressable
+                    onPress={handleEditProfile}
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: '#3b82f6',
+                    }}
+                  >
+                    <Feather name="edit-2" size={20} color="white" />
+                  </Pressable>
+                )}
+              </View>
             </View>
           </View>
 
@@ -329,11 +605,6 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
             borderRadius: 16,
             marginBottom: spacing,
             alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             {/* Avatar */}
             <View style={{
@@ -401,8 +672,32 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
 
           {/* Personal Information */}
           <InfoCard title="Personal Information">
-            <InfoRow label="Full Name" value={profile.full_name} icon="user" />
-            <InfoRow label="Email Address" value={profile.email} icon="mail" />
+            <InfoRow label="Username" value={profile.username} icon="at-sign" />
+            <StableEditField 
+              label="Full Name" 
+              value={profile.full_name}
+              initialValue={profile.full_name}
+              onGetValue={(getValue) => { getFullNameValue.current = getValue; }}
+              error={editErrors.full_name}
+              autoCapitalize="words"
+              placeholder="Enter your full name"
+              fontSize={fontSize}
+              isEditing={isEditing}
+              icon="user"
+            />
+            <StableEditField 
+              label="Email Address" 
+              value={profile.email}
+              initialValue={profile.email}
+              onGetValue={(getValue) => { getEmailValue.current = getValue; }}
+              error={editErrors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="Enter your email address"
+              fontSize={fontSize}
+              isEditing={isEditing}
+              icon="mail"
+            />
             <InfoRow label="Account Type" value={profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} icon="shield" />
             <InfoRow label="Member Since" value={formatDate(profile.created_at)} icon="calendar" />
             <View style={{
@@ -413,7 +708,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
               <View style={{
                 width: 32,
                 height: 32,
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f3f3f3',
                 borderRadius: 16,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -443,8 +738,26 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
           {/* Trainer Information */}
           <InfoCard title="Trainer Information">
             <InfoRow label="Trainer Code" value={profile.trainer_code} icon="hash" />
-            <InfoRow label="Certification ID" value={profile.certification_id} icon="award" />
-            <InfoRow label="Specialization" value={profile.specialization} icon="target" />
+            <StableEditField 
+              label="Certification ID" 
+              value={profile.certification_id}
+              initialValue={profile.certification_id || ''}
+              onGetValue={(getValue) => { getCertificationIdValue.current = getValue; }}
+              placeholder="Enter certification ID (optional)"
+              fontSize={fontSize}
+              isEditing={isEditing}
+              icon="award"
+            />
+            <StableEditField 
+              label="Specialization" 
+              value={profile.specialization}
+              initialValue={profile.specialization || ''}
+              onGetValue={(getValue) => { getSpecializationValue.current = getValue; }}
+              placeholder="Enter your specialization (optional)"
+              fontSize={fontSize}
+              isEditing={isEditing}
+              icon="target"
+            />
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -453,7 +766,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
               <View style={{
                 width: 32,
                 height: 32,
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f3f3f3',
                 borderRadius: 16,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -490,11 +803,6 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
             backgroundColor: 'white',
             padding: cardPadding,
             borderRadius: 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <Text style={{
               fontSize: fontSize + 2,
@@ -505,29 +813,31 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
               Quick Actions
             </Text>
             
-            <Pressable
-              onPress={() => Alert.alert('Edit Profile', 'Edit profile functionality coming soon!')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 12,
-                backgroundColor: '#f8fafc',
-                borderRadius: 8,
-                marginBottom: 8
-              }}
-            >
-              <Feather name="edit-2" size={20} color="#3b82f6" />
-              <Text style={{
-                fontSize: fontSize,
-                fontWeight: '500',
-                color: '#1f2937',
-                marginLeft: 12
-              }}>
-                Edit Profile
-              </Text>
-              <View style={{ flex: 1 }} />
-              <Feather name="chevron-right" size={20} color="#6b7280" />
-            </Pressable>
+            {!isEditing && (
+              <Pressable
+                onPress={handleEditProfile}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 12,
+                  backgroundColor: '#f3f3f3',
+                  borderRadius: 8,
+                  marginBottom: 8
+                }}
+              >
+                <Feather name="edit-2" size={20} color="#3b82f6" />
+                <Text style={{
+                  fontSize: fontSize,
+                  fontWeight: '500',
+                  color: '#1f2937',
+                  marginLeft: 12
+                }}>
+                  Edit Profile
+                </Text>
+                <View style={{ flex: 1 }} />
+                <Feather name="chevron-right" size={20} color="#6b7280" />
+              </Pressable>
+            )}
 
             <Pressable
               onPress={() => Alert.alert('Change Password', 'Change password functionality coming soon!')}
@@ -535,7 +845,7 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
                 flexDirection: 'row',
                 alignItems: 'center',
                 padding: 12,
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f3f3f3',
                 borderRadius: 8,
               }}
             >
