@@ -14,11 +14,6 @@ import { tursoDbHelpers as dbHelpers } from './turso-database';
 
 // Hash password using expo-crypto (React Native/Expo compatible)
 async function hashPassword(password: string): Promise<string> {
-  console.log('🔒 hashPassword called with:', { 
-    password: password ? `[${password.length} chars]` : 'null/undefined', 
-    type: typeof password, 
-    length: password?.length 
-  });
   
   // Validate password input
   if (!password || typeof password !== 'string') {
@@ -32,7 +27,6 @@ async function hashPassword(password: string): Promise<string> {
   }
   
   try {
-    console.log('🔒 Using expo-crypto for password hashing...');
     
     // Generate a salt using crypto random bytes
     const salt = await Crypto.getRandomBytesAsync(16);
@@ -45,7 +39,6 @@ async function hashPassword(password: string): Promise<string> {
     let hashedPassword = saltedPassword;
     const iterations = 10000; // 10k iterations for security
     
-    console.log('🔒 Performing', iterations, 'hash iterations...');
     for (let i = 0; i < iterations; i++) {
       hashedPassword = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
@@ -56,31 +49,23 @@ async function hashPassword(password: string): Promise<string> {
     
     // Combine salt and hash for storage
     const finalHash = `crypto_${saltHex}_${hashedPassword}`;
-    console.log('✅ Password hashed successfully with expo-crypto, length:', finalHash.length);
     return finalHash;
     
   } catch (error) {
     console.error('❌ expo-crypto hash error:', error);
     
     // Fallback to simple hash if crypto fails
-    console.log('⚠️ FALLING BACK TO SIMPLE HASH FOR DEBUGGING');
     const simpleHash = `simple_hash_${password}_${Date.now()}`;
-    console.log('✅ Simple hash created, length:', simpleHash.length);
     return simpleHash;
   }
 }
 
 // Verify password using expo-crypto (React Native/Expo compatible)
 async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  console.log('🔍 verifyPassword called with:', { 
-    password: password ? `[${password.length} chars]` : 'null/undefined',
-    hashedPassword: hashedPassword ? `[${hashedPassword.length} chars]` : 'null/undefined'
-  });
   
   try {
     // Handle expo-crypto hash verification
     if (hashedPassword.startsWith('crypto_')) {
-      console.log('🔍 Using expo-crypto for password verification...');
       
       // Extract salt and hash from stored password
       const parts = hashedPassword.split('_');
@@ -99,7 +84,6 @@ async function verifyPassword(password: string, hashedPassword: string): Promise
       let computedHash = saltedPassword;
       const iterations = 10000;
       
-      console.log('🔍 Performing', iterations, 'hash iterations for verification...');
       for (let i = 0; i < iterations; i++) {
         computedHash = await Crypto.digestStringAsync(
           Crypto.CryptoDigestAlgorithm.SHA256,
@@ -109,23 +93,18 @@ async function verifyPassword(password: string, hashedPassword: string): Promise
       }
       
       const isValid = computedHash === storedHash;
-      console.log('✅ expo-crypto verification result:', isValid);
       return isValid;
     }
     
     // Handle simple hash verification for debugging
     if (hashedPassword.startsWith('simple_hash_')) {
-      console.log('⚠️ USING SIMPLE HASH VERIFICATION FOR DEBUGGING');
       const extractedPassword = hashedPassword.split('_').slice(2, -1).join('_');
       const isValid = extractedPassword === password;
-      console.log('✅ Simple hash verification result:', isValid);
       return isValid;
     }
     
     // Fallback to bcrypt for existing passwords
-    console.log('🔍 Falling back to bcrypt verification...');
     const result = await bcrypt.compare(password, hashedPassword);
-    console.log('✅ bcrypt verification result:', result);
     return result;
     
   } catch (error) {
@@ -138,6 +117,7 @@ async function verifyPassword(password: string, hashedPassword: string): Promise
 function convertToAuthUser(userRow: any, trainerRow?: any, athleteRow?: any): AuthUser {
   const baseUser: AuthUser = {
     id: userRow.id,
+    username: userRow.username,
     email: userRow.email,
     full_name: userRow.full_name,
     role: userRow.role as 'trainer' | 'athlete',
@@ -166,19 +146,27 @@ function convertToAuthUser(userRow: any, trainerRow?: any, athleteRow?: any): Au
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-
+    let userRow;
     
-    // Find user by email
-    const userRow = await dbHelpers.get(
-      'SELECT * FROM users WHERE email = ?',
-      [credentials.email]
-    );
-
-
+    // Determine if logging in with username or email
+    if (credentials.email) {
+      // Login with email
+      userRow = await dbHelpers.get(
+        'SELECT * FROM users WHERE email = ?',
+        [credentials.email]
+      );
+    } else if (credentials.username) {
+      // Login with username
+      userRow = await dbHelpers.get(
+        'SELECT * FROM users WHERE username = ?',
+        [credentials.username]
+      );
+    } else {
+      return { success: false, error: 'Username or email is required' };
+    }
 
     if (!userRow) {
-
-      return { success: false, error: 'Invalid email or password' };
+      return { success: false, error: 'Invalid username/email or password' };
     }
 
     // Verify password
@@ -190,7 +178,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
 
     
     if (!isValidPassword) {
-      return { success: false, error: 'Invalid email or password' };
+      return { success: false, error: 'Invalid username/email or password' };
     }
 
     // Get role-specific data
@@ -228,32 +216,33 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResp
 
 export async function registerUser(userData: RegisterTrainerData | RegisterAthleteData): Promise<AuthResponse> {
   try {
-    console.log('📝 registerUser called with userData:', {
-      email: userData.email,
-      full_name: userData.full_name,
-      role: userData.role,
-      password: userData.password ? `[${userData.password.length} chars]` : 'undefined/null',
-      passwordType: typeof userData.password
-    });
     
-    // Check if user already exists
-    const existingUser = await dbHelpers.get(
+    // Check if user already exists (by username or email)
+    const existingUserByUsername = await dbHelpers.get(
+      'SELECT id FROM users WHERE username = ?',
+      [userData.username]
+    );
+
+    if (existingUserByUsername) {
+      return { success: false, error: 'An account with this username already exists' };
+    }
+
+    const existingUserByEmail = await dbHelpers.get(
       'SELECT id FROM users WHERE email = ?',
       [userData.email]
     );
 
-    if (existingUser) {
+    if (existingUserByEmail) {
       return { success: false, error: 'An account with this email already exists' };
     }
 
     // Hash password
-    console.log('📝 About to hash password...');
     const hashedPassword = await hashPassword(userData.password);
 
     // Insert user
     const userResult = await dbHelpers.run(
-      'INSERT INTO users (email, password, full_name, role) VALUES (?, ?, ?, ?)',
-      [userData.email, hashedPassword, userData.full_name, userData.role]
+      'INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)',
+      [userData.username, userData.email, hashedPassword, userData.full_name, userData.role]
     );
 
     const userId = Number(userResult.lastInsertRowid);

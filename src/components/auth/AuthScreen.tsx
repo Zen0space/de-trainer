@@ -15,11 +15,14 @@ type AuthMode = 'login' | 'register';
 type UserRole = 'trainer' | 'athlete';
 
 interface LoginForm {
-  email: string;
+  identifier: string; // Can be username or email
   password: string;
 }
 
-interface RegisterForm extends LoginForm {
+interface RegisterForm {
+  username: string;
+  email: string;
+  password: string;
   full_name: string;
   role: UserRole;
   trainer_code?: string;
@@ -59,22 +62,9 @@ export function AuthScreen() {
   // Keyboard-aware scrolling
   const { keyboardAvoidingViewProps, scrollViewProps } = useKeyboardAware({ containerPadding });
   
-  // Console log keyboard state changes
+  // Monitor keyboard state changes for responsive behavior
   useEffect(() => {
-    console.log('🎹 Keyboard State Changed:', {
-      isVisible: keyboard.isVisible,
-      height: keyboard.height,
-      duration: keyboard.duration,
-      easing: keyboard.easing
-    });
-    
-    if (keyboard.isVisible) {
-      console.log('✅ Keyboard OPENED - Height:', keyboard.height + 'px');
-      console.log('📱 Content MinHeight:', (height + keyboard.height + 100) + 'px - Scrolling ENABLED');
-    } else {
-      console.log('❌ Keyboard CLOSED');
-      console.log('📱 Using flexGrow: 1 - Scrolling DISABLED (content centered)');
-    }
+    // Keyboard state is handled by the useKeyboardAware hook
   }, [keyboard.isVisible, keyboard.height, keyboard.duration, keyboard.easing, height]);
   
   // Experience level options
@@ -92,11 +82,12 @@ export function AuthScreen() {
   ];
   
   const [loginForm, setLoginForm] = useState<LoginForm>({
-    email: '',
+    identifier: '',
     password: '',
   });
   
   const [registerForm, setRegisterForm] = useState<RegisterForm>({
+    username: '',
     email: '',
     password: '',
     full_name: '',
@@ -105,12 +96,40 @@ export function AuthScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Helper function to detect if input is email or username
+  const isEmail = (input: string): boolean => {
+    return input.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+  };
+
   // Validation helper functions
+  const validateIdentifier = (identifier: string): string | null => {
+    if (!identifier) return 'Username or email is required';
+    if (identifier.includes(' ')) return 'Username or email cannot contain spaces';
+    
+    // If it looks like an email, validate as email
+    if (identifier.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier)) return 'Please enter a valid email address';
+    } else {
+      // Validate as username
+      if (identifier.length < 3) return 'Username must be at least 3 characters';
+      if (!/^[a-zA-Z0-9_.-]+$/.test(identifier)) return 'Username can only contain letters, numbers, dots, hyphens, and underscores';
+    }
+    return null;
+  };
+
   const validateUsername = (username: string): string | null => {
     if (!username) return 'Username is required';
     if (username.includes(' ')) return 'Username cannot contain spaces';
     if (username.length < 3) return 'Username must be at least 3 characters';
     if (!/^[a-zA-Z0-9_.-]+$/.test(username)) return 'Username can only contain letters, numbers, dots, hyphens, and underscores';
+    return null;
+  };
+
+  const validateEmail = (email: string): string | null => {
+    if (!email) return 'Email is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Please enter a valid email address';
     return null;
   };
 
@@ -143,14 +162,17 @@ export function AuthScreen() {
     const newErrors: Record<string, string> = {};
     
     if (authMode === 'login') {
-      // Login validation
-      const usernameError = validateUsername(loginForm.email);
-      if (usernameError) newErrors.email = usernameError;
+      // Login validation - flexible identifier (username or email)
+      const identifierError = validateIdentifier(loginForm.identifier);
+      if (identifierError) newErrors.identifier = identifierError;
       if (!loginForm.password) newErrors.password = 'Password is required';
     } else {
       // Registration validation
-      const usernameError = validateUsername(registerForm.email);
-      if (usernameError) newErrors.email = usernameError;
+      const usernameError = validateUsername(registerForm.username);
+      if (usernameError) newErrors.username = usernameError;
+      
+      const emailError = validateEmail(registerForm.email);
+      if (emailError) newErrors.email = emailError;
       
       if (!registerForm.password) newErrors.password = 'Password is required';
       if (registerForm.password && registerForm.password.length < 6) {
@@ -185,7 +207,12 @@ export function AuthScreen() {
     if (!(await validateForm())) return;
     
     try {
-      const result = await login({ email: loginForm.email, password: loginForm.password });
+      // Determine if identifier is email or username
+      const loginData = isEmail(loginForm.identifier) 
+        ? { email: loginForm.identifier, password: loginForm.password }
+        : { username: loginForm.identifier, password: loginForm.password };
+      
+      const result = await login(loginData);
       if (!result.success) {
         Alert.alert('Login Failed', result.error || 'Please check your credentials');
       }
@@ -212,14 +239,15 @@ export function AuthScreen() {
               onPress: () => {
                 // Switch to login mode
                 setAuthMode('login');
-                // Pre-fill login email
+                // Pre-fill login identifier with username
                 setLoginForm({
-                  email: registerForm.email,
+                  identifier: registerForm.username,
                   password: ''
                 });
                 // Clear errors and registration form
                 setErrors({});
                 setRegisterForm({
+                  username: '',
                   email: '',
                   password: '',
                   full_name: '',
@@ -313,19 +341,32 @@ export function AuthScreen() {
             )}
 
             <Input
-              placeholder="Enter Username"
-              value={authMode === 'login' ? loginForm.email : registerForm.email}
+              placeholder={authMode === 'login' ? "Enter Username or Email" : "Enter Username"}
+              value={authMode === 'login' ? loginForm.identifier : registerForm.username}
               onChangeText={(text) => {
                 if (authMode === 'login') {
-                  setLoginForm({ ...loginForm, email: text });
+                  setLoginForm({ ...loginForm, identifier: text });
                 } else {
-                  setRegisterForm({ ...registerForm, email: text });
+                  setRegisterForm({ ...registerForm, username: text });
                 }
               }}
-              error={errors.email}
-              keyboardType="email-address"
+              error={authMode === 'login' ? errors.identifier : errors.username}
+              keyboardType={authMode === 'login' ? "default" : "default"}
               autoCapitalize="none"
             />
+
+            {authMode === 'register' && (
+              <Input
+                placeholder="Enter Email Address"
+                value={registerForm.email}
+                onChangeText={(text) => {
+                  setRegisterForm({ ...registerForm, email: text });
+                }}
+                error={errors.email}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
 
             <Input
               placeholder="Password"

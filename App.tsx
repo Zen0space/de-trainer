@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SessionProvider, useSession } from './src/contexts/AuthContext';
 import { AuthScreen } from './src/components/auth/AuthScreen';
 import { TrainerHomeScreen } from './src/screens/trainer/TrainerHomeScreen';
@@ -28,7 +29,7 @@ function MainContent() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <View className="flex-1 bg-background items-center justify-center">
           <View className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4 animate-spin" />
           <Text className="text-secondary text-base">Loading...</Text>
@@ -39,7 +40,7 @@ function MainContent() {
 
   if (!user) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <AuthScreen />
       </SafeAreaView>
     );
@@ -48,7 +49,7 @@ function MainContent() {
   // User is authenticated - show role-specific screen
   if ((user.role as string) === 'trainer') {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <TrainerHomeScreen />
       </SafeAreaView>
     );
@@ -57,7 +58,7 @@ function MainContent() {
   // Athlete dashboard
   if ((user.role as string) === 'athlete') {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <AthleteHomeScreen />
       </SafeAreaView>
     );
@@ -65,7 +66,7 @@ function MainContent() {
 
   // Default dashboard for other roles (fallback)
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <View className="flex-1 bg-background">
       <ScrollView 
         className="flex-1"
@@ -241,8 +242,8 @@ export default function App() {
   // Show loading screen while initializing database
   if (!dbInitialized && !dbError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f3f3' }}>
           <View style={{ 
             width: 32, 
             height: 32, 
@@ -261,8 +262,8 @@ export default function App() {
   // Show error screen if database connection failed
   if (dbError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5', padding: 20 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f3f3', padding: 20 }}>
           <Text style={{ fontSize: 24, marginBottom: 16, color: '#FF3B30' }}>❌</Text>
           <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>Database Connection Failed</Text>
           <Text style={{ fontSize: 14, color: '#666', textAlign: 'center' }}>{dbError}</Text>
@@ -274,10 +275,12 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <SessionProvider>
-          <MainContent />
-          <StatusBar style="auto" />
-        </SessionProvider>
+        <KeyboardProvider>
+          <SessionProvider>
+            <MainContent />
+            <StatusBar style="auto" />
+          </SessionProvider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

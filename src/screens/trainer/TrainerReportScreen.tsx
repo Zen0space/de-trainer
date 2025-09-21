@@ -178,7 +178,7 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f3f3' }}>
         <Feather name="loader" size={32} color="#6b7280" />
         <Text style={{ fontSize: fontSize, color: '#6b7280', marginTop: 16 }}>
           Loading athletes...
@@ -188,7 +188,7 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <KeyboardAvoidingView {...keyboardAvoidingViewProps}>
         <ScrollView
           {...scrollViewProps}
@@ -209,11 +209,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <Pressable
@@ -274,11 +269,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="users" size={20} color="#3b82f6" />
@@ -305,11 +295,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="activity" size={20} color="#10b981" />
@@ -336,11 +321,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'white',
                   padding: cardPadding,
                   borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Feather name="trending-up" size={20} color="#f59e0b" />
@@ -370,11 +350,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
                 backgroundColor: 'white',
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
                 overflow: 'hidden'
               }}>
                 {filteredAthletes.map((athlete, index) => {
@@ -516,11 +491,6 @@ export function TrainerReportScreen({ onBack }: { onBack: () => void }) {
                 padding: cardPadding * 2,
                 borderRadius: 16,
                 alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
               }}>
                 <View style={{
                   width: 80,

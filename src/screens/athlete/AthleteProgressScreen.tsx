@@ -295,11 +295,6 @@ export function AthleteProgressScreen() {
       borderRadius: 8,
       padding: 4,
       marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
     }}>
       {(['7d', '30d', '90d'] as TimePeriod[]).map((period) => (
         <Pressable
@@ -377,11 +372,6 @@ export function AthleteProgressScreen() {
         padding: cardPadding,
         borderRadius: 12,
         marginBottom: spacing,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <View style={{ flex: 1 }}>
@@ -557,11 +547,6 @@ export function AthleteProgressScreen() {
       padding: cardPadding,
       borderRadius: 12,
       marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <Text style={{
@@ -654,11 +639,6 @@ export function AthleteProgressScreen() {
       minWidth: 200,
       borderLeftWidth: 4,
       borderLeftColor: '#10b981',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
         <Feather name="award" size={16} color="#10b981" />
@@ -712,11 +692,6 @@ export function AthleteProgressScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 300,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
     }}>
       <View style={{
         width: 80,
@@ -753,7 +728,7 @@ export function AthleteProgressScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -773,11 +748,6 @@ export function AthleteProgressScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
@@ -814,11 +784,6 @@ export function AthleteProgressScreen() {
               padding: cardPadding,
               borderRadius: 16,
               marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 200
@@ -847,11 +812,6 @@ export function AthleteProgressScreen() {
                     backgroundColor: 'white',
                     padding: cardPadding,
                     borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
                   }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
                       {progressStats.totalPersonalRecords}
@@ -865,11 +825,6 @@ export function AthleteProgressScreen() {
                     backgroundColor: 'white',
                     padding: cardPadding,
                     borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
                   }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
                       {progressStats.improvingComponents}
@@ -883,11 +838,6 @@ export function AthleteProgressScreen() {
                     backgroundColor: 'white',
                     padding: cardPadding,
                     borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
                   }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
                       {progressStats.activeComponents}
@@ -901,11 +851,6 @@ export function AthleteProgressScreen() {
                     backgroundColor: 'white',
                     padding: cardPadding,
                     borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
                   }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', marginBottom: 4 }}>
                       {progressStats.recentPersonalRecords}
@@ -942,11 +887,6 @@ export function AthleteProgressScreen() {
                   padding: cardPadding,
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                     <View style={{
@@ -979,7 +919,7 @@ export function AthleteProgressScreen() {
                   </View>
                   
                   <View style={{
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#f3f3f3',
                     padding: 12,
                     borderRadius: 8,
                     borderLeftWidth: 4,

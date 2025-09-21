@@ -272,11 +272,6 @@ export function AthleteDetailsScreen({
       padding: cardPadding,
       borderRadius: 12,
       marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
       borderLeftWidth: log.is_best_record ? 4 : 0,
       borderLeftColor: log.is_best_record ? '#10b981' : 'transparent',
     }}>
@@ -361,7 +356,7 @@ export function AthleteDetailsScreen({
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <View style={{ 
           flex: 1, 
           justifyContent: 'center', 
@@ -376,11 +371,6 @@ export function AthleteDetailsScreen({
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: 200,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <Feather name="loader" size={32} color="#6b7280" />
             <Text style={{
@@ -399,7 +389,7 @@ export function AthleteDetailsScreen({
 
   if (!athleteProfile) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+      <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
         <View style={{ 
           flex: 1, 
           justifyContent: 'center', 
@@ -414,11 +404,6 @@ export function AthleteDetailsScreen({
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: 200,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <Feather name="alert-circle" size={32} color="#ef4444" />
             <Text style={{
@@ -436,7 +421,7 @@ export function AthleteDetailsScreen({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -456,11 +441,6 @@ export function AthleteDetailsScreen({
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Pressable
@@ -531,11 +511,6 @@ export function AthleteDetailsScreen({
             borderRadius: 12,
             marginBottom: spacing,
             flexDirection: 'row',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
             <TabButton
               id="profile"
@@ -561,11 +536,6 @@ export function AthleteDetailsScreen({
                   padding: cardPadding,
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <Text style={{
                     fontSize: fontSize + 1,
@@ -611,11 +581,6 @@ export function AthleteDetailsScreen({
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
               }}>
                 <Text style={{
                   fontSize: fontSize + 1,
@@ -690,11 +655,6 @@ export function AthleteDetailsScreen({
                 padding: cardPadding,
                 borderRadius: 16,
                 marginBottom: spacing,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
               }}>
                 <Text style={{
                   fontSize: fontSize + 1,
@@ -737,11 +697,6 @@ export function AthleteDetailsScreen({
                   padding: cardPadding,
                   borderRadius: 16,
                   marginBottom: spacing,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <Text style={{
                     fontSize: fontSize + 1,
@@ -773,11 +728,6 @@ export function AthleteDetailsScreen({
                     padding: cardPadding,
                     borderRadius: 16,
                     marginBottom: spacing,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
                   }}>
                     <Text style={{
                       fontSize: fontSize,
@@ -847,11 +797,6 @@ export function AthleteDetailsScreen({
                   alignItems: 'center',
                   justifyContent: 'center',
                   minHeight: 300,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  elevation: 2,
                 }}>
                   <View style={{
                     width: 80,

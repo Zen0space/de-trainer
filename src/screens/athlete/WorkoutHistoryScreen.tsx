@@ -153,13 +153,7 @@ export function WorkoutHistoryScreen() {
         marginRight: 12,
         borderWidth: 1,
         borderColor: isSelected ? '#3b82f6' : '#e5e7eb',
-        minWidth: 140,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-      }}
+        minWidth: 140,      }}
     >
       <Text style={{
         fontSize: fontSize,
@@ -183,13 +177,7 @@ export function WorkoutHistoryScreen() {
       backgroundColor: 'white',
       padding: cardPadding,
       borderRadius: 12,
-      marginBottom: spacing,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
-      borderLeftWidth: 0,
+      marginBottom: spacing,      borderLeftWidth: 0,
       borderLeftColor: 'transparent',
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -258,7 +246,7 @@ export function WorkoutHistoryScreen() {
           </View>
           
           <View style={{
-            backgroundColor: '#f8fafc',
+            backgroundColor: '#f3f3f3',
             padding: 12,
             borderRadius: 8,
             marginBottom: 8
@@ -314,13 +302,7 @@ export function WorkoutHistoryScreen() {
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 300,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    }}>
+      minHeight: 300,    }}>
       <View style={{
         width: 80,
         height: 80,
@@ -356,7 +338,7 @@ export function WorkoutHistoryScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+    <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
@@ -375,13 +357,7 @@ export function WorkoutHistoryScreen() {
             backgroundColor: 'white',
             padding: cardPadding,
             borderRadius: 16,
-            marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}>
+            marginBottom: spacing,          }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
                 <Text style={{
@@ -416,13 +392,7 @@ export function WorkoutHistoryScreen() {
               backgroundColor: 'white',
               padding: cardPadding,
               borderRadius: 16,
-              marginBottom: spacing,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
-              alignItems: 'center',
+              marginBottom: spacing,              alignItems: 'center',
               justifyContent: 'center',
               minHeight: 200
             }}>
@@ -449,13 +419,7 @@ export function WorkoutHistoryScreen() {
                   <View style={{
                     backgroundColor: 'white',
                     padding: cardPadding,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
+                    borderRadius: 12,                  }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
                       {stats.totalTests}
                     </Text>
@@ -467,13 +431,7 @@ export function WorkoutHistoryScreen() {
                   <View style={{
                     backgroundColor: 'white',
                     padding: cardPadding,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
+                    borderRadius: 12,                  }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
                       {stats.personalRecords}
                     </Text>
@@ -485,13 +443,7 @@ export function WorkoutHistoryScreen() {
                   <View style={{
                     backgroundColor: 'white',
                     padding: cardPadding,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
+                    borderRadius: 12,                  }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
                       {stats.recentTests}
                     </Text>
@@ -503,13 +455,7 @@ export function WorkoutHistoryScreen() {
                   <View style={{
                     backgroundColor: 'white',
                     padding: cardPadding,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}>
+                    borderRadius: 12,                  }}>
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', marginBottom: 4 }}>
                       {stats.uniqueTestTypes}
                     </Text>

@@ -54,7 +54,6 @@ export function TrainerHomeScreen() {
       setIsLoadingDashboard(true);
     }
     try {
-      console.log('🔍 Dashboard Query - Current User ID:', user.id, 'User:', user.full_name);
       
       // Fetch total enrolled athletes
       const totalAthletesResult = await tursoDbHelpers.get(`
@@ -62,8 +61,6 @@ export function TrainerHomeScreen() {
         FROM enrollments e
         WHERE e.trainer_id = ? AND e.status = 'approved'
       `, [user.id]);
-      
-      console.log('📊 Dashboard Query Result - Total Athletes:', totalAthletesResult);
       
       // Fetch active sessions (recent tests in last 7 days)
       const activeSessionsResult = await tursoDbHelpers.get(`
@@ -247,7 +244,7 @@ export function TrainerHomeScreen() {
   const renderPlaceholderScreen = (title: string, icon: string, description: string) => (
     <View style={{ 
       flex: 1, 
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#f3f3f3',
       padding: containerPadding,
       paddingBottom: containerPadding + bottomNavHeight 
     }}>
@@ -319,11 +316,6 @@ export function TrainerHomeScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
@@ -361,85 +353,112 @@ export function TrainerHomeScreen() {
             </View>
           </View>
 
-          {/* Stats Cards */}
-          <View style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            marginBottom: spacing,
-            gap: spacing / 2
-          }}>
-            <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-              <View style={{
-                backgroundColor: 'white',
-                padding: cardPadding,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
+          {/* Stats Cards - Horizontal Scroll */}
+          <ScrollView
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 4,
+              paddingVertical: 4,
+              gap: 12,
+            }}
+            style={{ 
+              marginBottom: spacing,
+              height: isSmallScreen ? 70 : 75
+            }}
+          >
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#3b82f6', 
+                marginBottom: 4 
               }}>
-                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
-                  {isLoadingDashboard ? '...' : stats.totalAthletes}
-                </Text>
-                <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Total Athletes</Text>
-              </View>
+                {isLoadingDashboard ? '...' : stats.totalAthletes}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Total Athletes
+              </Text>
             </View>
             
-            <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-              <View style={{
-                backgroundColor: 'white',
-                padding: cardPadding,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#10b981', 
+                marginBottom: 4 
               }}>
-                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
-                  {isLoadingDashboard ? '...' : stats.activeSessions}
-                </Text>
-                <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Active Sessions</Text>
-              </View>
+                {isLoadingDashboard ? '...' : stats.activeSessions}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Active Sessions
+              </Text>
             </View>
             
-            <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-              <View style={{
-                backgroundColor: 'white',
-                padding: cardPadding,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#f59e0b', 
+                marginBottom: 4 
               }}>
-                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
-                  {isLoadingDashboard ? '...' : stats.completedSessions}
-                </Text>
-                <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Completed</Text>
-              </View>
+                {isLoadingDashboard ? '...' : stats.completedSessions}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Completed
+              </Text>
             </View>
             
-            <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-              <View style={{
-                backgroundColor: 'white',
-                padding: cardPadding,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 2,
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#8b5cf6', 
+                marginBottom: 4 
               }}>
-                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', marginBottom: 4 }}>
-                  {isLoadingDashboard ? '...' : `${stats.avgProgress}%`}
-                </Text>
-                <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Avg Progress</Text>
-              </View>
+                {isLoadingDashboard ? '...' : `${stats.avgProgress}%`}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Avg Progress
+              </Text>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Quick Actions */}
           <View style={{
@@ -447,11 +466,6 @@ export function TrainerHomeScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <Text style={{
               fontSize: fontSize + 2,
@@ -473,7 +487,7 @@ export function TrainerHomeScreen() {
                   style={{
                     flex: 1,
                     minWidth: isSmallScreen ? '48%' : 140,
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#f3f3f3',
                     padding: 16,
                     borderRadius: 12,
                     alignItems: 'center',
@@ -530,11 +544,6 @@ export function TrainerHomeScreen() {
             padding: cardPadding,
             borderRadius: 16,
             marginBottom: spacing,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
           }}>
             <Text style={{
               fontSize: fontSize + 2,
@@ -665,7 +674,7 @@ export function TrainerHomeScreen() {
               style={{
                 marginTop: 16,
                 padding: 12,
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f3f3f3',
                 borderRadius: 8,
                 alignItems: 'center'
               }}
