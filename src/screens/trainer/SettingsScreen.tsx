@@ -3,11 +3,15 @@ import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView } from 'r
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { ProfileScreen } from './ProfileScreen';
+import { ChangelogModal } from '../../components/ui/ChangelogModal';
+import { PrivacyPolicyModal } from '../../components/ui/PrivacyPolicyModal';
 
 export function SettingsScreen() {
   const { user, logout } = useSession();
   const { width } = useWindowDimensions();
   const [showProfile, setShowProfile] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
   // Responsive design
   const isSmallScreen = width < 380;
@@ -282,8 +286,8 @@ export function SettingsScreen() {
             <SettingItem
               icon="info"
               title="App Version"
-              subtitle="1.3.10"
-              onPress={() => Alert.alert('Version', 'DE-Trainer v1.3.10')}
+              subtitle="1.3.11"
+              onPress={() => setShowChangelog(true)}
             />
             <SettingItem
               icon="help-circle"
@@ -301,7 +305,7 @@ export function SettingsScreen() {
               icon="shield"
               title="Privacy Policy"
               subtitle="Learn how we protect your data"
-              onPress={() => Alert.alert('Privacy Policy', 'Privacy policy coming soon!')}
+              onPress={() => setShowPrivacyPolicy(true)}
             />
             <SettingItem
               icon="star"
@@ -338,6 +342,18 @@ export function SettingsScreen() {
 
         </View>
       </ScrollView>
+      
+      {/* Changelog Modal */}
+      <ChangelogModal 
+        visible={showChangelog} 
+        onClose={() => setShowChangelog(false)} 
+      />
+      
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal 
+        visible={showPrivacyPolicy} 
+        onClose={() => setShowPrivacyPolicy(false)} 
+      />
     </View>
   );
 }
