@@ -4,6 +4,8 @@ import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { AthleteProfileScreen } from './AthleteProfileScreen';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { ChangelogModal } from '../../components/ui/ChangelogModal';
+import { PrivacyPolicyModal } from '../../components/ui/PrivacyPolicyModal';
 
 interface Notification {
   id: number;
@@ -21,6 +23,8 @@ export function AthleteSettingsScreen() {
   const { width } = useWindowDimensions();
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -698,8 +702,8 @@ export function AthleteSettingsScreen() {
             <SettingItem
               icon="info"
               title="App Version"
-              subtitle="1.3.10"
-              onPress={() => Alert.alert('Version', 'DE-Trainer v1.3.10')}
+              subtitle="1.3.11"
+              onPress={() => setShowChangelog(true)}
             />
             <SettingItem
               icon="file-text"
@@ -711,7 +715,7 @@ export function AthleteSettingsScreen() {
               icon="shield-check"
               title="Privacy Policy"
               subtitle="Learn how we protect your data"
-              onPress={() => Alert.alert('Privacy Policy', 'Privacy policy coming soon!')}
+              onPress={() => setShowPrivacyPolicy(true)}
             />
           </View>
 
@@ -742,6 +746,18 @@ export function AthleteSettingsScreen() {
 
         </View>
       </ScrollView>
+      
+      {/* Changelog Modal */}
+      <ChangelogModal 
+        visible={showChangelog} 
+        onClose={() => setShowChangelog(false)} 
+      />
+      
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal 
+        visible={showPrivacyPolicy} 
+        onClose={() => setShowPrivacyPolicy(false)} 
+      />
     </View>
   );
 }

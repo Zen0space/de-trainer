@@ -2,7 +2,7 @@
 
 All notable changes to DE-Trainer will be documented in this file.
 
-## [1.3.11] - 2025-01-21
+## [1.3.11] - 2025-09-21
 
 ### 🎨 Design Updates
 - Updated app background to a cleaner, lighter theme
