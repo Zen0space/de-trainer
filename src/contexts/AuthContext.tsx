@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useStorageState } from './useStorageState';
 import { loginUser, registerUser, refreshUserData } from '../lib/api';
+import { setUserContext, clearUserContext } from '../lib/offline-api';
 import { 
   AuthUser, 
   AuthContextType, 
@@ -44,9 +45,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
               if (response.success && response.user) {
 
                 setUser(response.user);
+                // Set user context for offline-first sync
+                setUserContext(response.user.id, response.user.role);
               } else {
 
                 setSession(null);
+                clearUserContext();
               }
             } else {
 
@@ -77,6 +81,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (response.success && response.user) {
 
         setUser(response.user);
+        // Set user context for offline-first sync
+        setUserContext(response.user.id, response.user.role);
         
         // For now, create a simple session token since we don't have JWT implementation
         const simpleToken = `session_${response.user.id}_${Date.now()}`;
@@ -101,6 +107,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       
       if (response.success && response.user && response.token) {
         setUser(response.user);
+        // Set user context for offline-first sync
+        setUserContext(response.user.id, response.user.role);
         setSession(response.token);
         return response;
       } else {
@@ -119,6 +127,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     try {
       setUser(null);
       setSession(null);
+      // Clear user context on logout
+      clearUserContext();
     } catch (error) {
       console.error('Logout error:', error);
     }

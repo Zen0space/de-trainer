@@ -6,6 +6,8 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Dropdown } from '../../components/ui/Dropdown';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { localDbHelpers } from '../../lib/local-database';
+import { createTestResult } from '../../lib/offline-api';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 
 // Types for the training log functionality
@@ -180,10 +182,9 @@ export function TrainingLogScreen() {
 
     setIsLoading(true);
     try {
-
-      
       // Check if this is a best record for this athlete and test
-      const existingResults = await tursoDbHelpers.all(`
+      // Use local database for offline-first approach
+      const existingResults = await localDbHelpers.all(`
         SELECT result_value 
         FROM test_results 
         WHERE athlete_id = ? AND test_id = ? 
@@ -208,49 +209,45 @@ export function TrainingLogScreen() {
         }
       }
 
-      // Save the test result
-      const result = await tursoDbHelpers.run(`
-        INSERT INTO test_results (
-          athlete_id, 
-          test_id, 
-          result_value, 
-          result_text, 
-          notes, 
-          test_date, 
-          input_unit, 
-          is_best_record
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        logEntry.athlete_id,
-        logEntry.test_id,
-        logEntry.result_value,
-        logEntry.result_text || null,
-        logEntry.notes || null,
-        logEntry.test_date,
-        logEntry.input_unit || null,
-        isBestRecord
-      ]);
+      // Save using offline-first API
+      // This saves to local database immediately and syncs in background
+      const result = await createTestResult({
+        athlete_id: logEntry.athlete_id,
+        test_id: logEntry.test_id,
+        result_value: logEntry.result_value,
+        result_text: logEntry.result_text || null,
+        notes: logEntry.notes || null,
+        test_date: logEntry.test_date,
+        input_unit: logEntry.input_unit || null,
+        is_best_record: isBestRecord
+      });
 
-
-      
-      Alert.alert('Success', `Fitness log entry saved successfully!${isBestRecord ? ' 🏆 New personal best!' : ''}`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Reset form
-            setLogEntry({
-              athlete_id: selectedAthlete?.id || 0,
-              test_id: 0,
-              result_value: null,
-              result_text: '',
-              notes: '',
-              test_date: new Date().toISOString().split('T')[0],
-              input_unit: ''
-            });
-            setSelectedComponent(null);
-          }
-        }
-      ]);
+      if (result.success) {
+        Alert.alert(
+          'Success', 
+          `Fitness log entry saved!${isBestRecord ? ' 🏆 New personal best!' : ''}\n\n📱 Saved locally and will sync to cloud automatically.`, 
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Reset form
+                setLogEntry({
+                  athlete_id: selectedAthlete?.id || 0,
+                  test_id: 0,
+                  result_value: null,
+                  result_text: '',
+                  notes: '',
+                  test_date: new Date().toISOString().split('T')[0],
+                  input_unit: ''
+                });
+                setSelectedComponent(null);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', result.message || 'Failed to save fitness log entry');
+      }
     } catch (error) {
       console.error('❌ Error saving fitness log:', error);
       Alert.alert('Error', 'Failed to save fitness log entry. Please try again.');

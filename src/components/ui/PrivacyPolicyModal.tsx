@@ -126,7 +126,7 @@ export function PrivacyPolicyModal({ visible, onClose }: PrivacyPolicyModalProps
 
   // Handle contact email press
   const handleContactPress = async () => {
-    const email = 'privacy@de-trainer.com';
+    const email = 'privacy@jejakatlet.com';
     const subject = 'Privacy Policy Inquiry';
     const url = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
     
@@ -146,7 +146,7 @@ export function PrivacyPolicyModal({ visible, onClose }: PrivacyPolicyModalProps
   const privacyPolicyContent = [
     {
       title: "Introduction",
-      content: "DE-Trainer is committed to protecting your privacy and ensuring you have a positive experience on our platform. This Privacy Policy outlines how we collect, use, and protect your personal information when you use our fitness training application."
+      content: "Jejak Atlet is committed to protecting your privacy and ensuring you have a positive experience on our platform. This Privacy Policy outlines how we collect, use, and protect your personal information when you use our fitness training application."
     },
     {
       title: "Information We Collect",

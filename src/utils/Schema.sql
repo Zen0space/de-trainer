@@ -1,7 +1,7 @@
 -- =============================================
--- DE-TRAINER DATABASE SCHEMA
+-- JEJAK ATLET DATABASE SCHEMA
 -- =============================================
--- Complete database schema for the DE-Trainer fitness tracking application
+-- Complete database schema for the Jejak Atlet fitness tracking application
 -- Generated from existing Turso database structure
 -- 
 -- This schema supports:

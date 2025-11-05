@@ -9,6 +9,7 @@ import { AuthScreen } from './src/components/auth/AuthScreen';
 import { TrainerHomeScreen } from './src/screens/trainer/TrainerHomeScreen';
 import { AthleteHomeScreen } from './src/screens/athlete/AthleteHomeScreen';
 import { initializeTursoConnection } from './src/lib/turso-database';
+import { initializeLocalDatabase } from './src/lib/local-database';
 
 function MainContent() {
   const { user, logout, isLoading } = useSession();
@@ -228,11 +229,16 @@ export default function App() {
   useEffect(() => {
     const initializeDatabase = async () => {
       try {
+        // Initialize local SQLite database first (offline-first)
+        await initializeLocalDatabase();
+        
+        // Then initialize Turso connection for sync
         await initializeTursoConnection();
+        
         setDbInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize Turso connection:', error);
-        setDbError(error instanceof Error ? error.message : 'Database connection failed');
+        console.error('Failed to initialize databases:', error);
+        setDbError(error instanceof Error ? error.message : 'Database initialization failed');
       }
     };
 
@@ -253,7 +259,7 @@ export default function App() {
             borderRadius: 16, 
             marginBottom: 16 
           }} />
-          <Text style={{ fontSize: 16, color: '#666' }}>Connecting to database...</Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>Initializing databases...</Text>
         </View>
       </SafeAreaView>
     );

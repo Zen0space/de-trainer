@@ -58,7 +58,7 @@ npm start
 ## Project Structure
 
 ```
-de-trainer/
+jejak-atlet/
 ├── App.tsx                 # Main app component
 ├── index.ts               # App entry point
 ├── global.css            # Global Tailwind styles

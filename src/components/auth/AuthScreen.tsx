@@ -307,7 +307,7 @@ export function AuthScreen() {
             >
               {authMode === 'login' 
                 ? "Welcome back, You've been missed!" 
-                : 'Create your DE-Trainer account'}
+                : 'Create your Jejak Atlet account'}
             </Text>
           </View>
 

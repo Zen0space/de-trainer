@@ -6,6 +6,7 @@ import { FloatingBottomNav, renderScreenFromRoute, getRoutes } from '../../compo
 import { ManageAthletesScreen } from './ManageAthletesScreen';
 import { AthleteDetailsScreen } from './AthleteDetailsScreen';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { formatTimeAgo } from '../../lib/date-utils';
 
 export function TrainerHomeScreen() {
   const { user, logout } = useSession();
@@ -98,7 +99,7 @@ export function TrainerHomeScreen() {
         SELECT 
           u.full_name as athlete_name,
           t.name as test_name,
-          tr.test_date,
+          tr.created_at as activity_time,
           tr.is_best_record,
           'test_completed' as activity_type
         FROM test_results tr
@@ -112,7 +113,7 @@ export function TrainerHomeScreen() {
         SELECT 
           u.full_name as athlete_name,
           'Enrolled with you' as test_name,
-          e.responded_at as test_date,
+          e.responded_at as activity_time,
           0 as is_best_record,
           'enrollment' as activity_type
         FROM enrollments e
@@ -120,7 +121,7 @@ export function TrainerHomeScreen() {
         WHERE e.trainer_id = ? AND e.status = 'approved'
         AND e.responded_at >= date('now', '-7 days')
         
-        ORDER BY test_date DESC
+        ORDER BY activity_time DESC
         LIMIT 5
       `, [user.id, user.id]);
 
@@ -133,7 +134,7 @@ export function TrainerHomeScreen() {
           : activity.is_best_record 
             ? `New PR in ${activity.test_name}`
             : `Completed ${activity.test_name}`,
-        time: formatTimeAgo(activity.test_date),
+        time: formatTimeAgo(activity.activity_time),
         type: activity.is_best_record || activity.activity_type === 'enrollment' ? 'success' : 'info'
       })).slice(0, 3); // Show only top 3
 
@@ -153,20 +154,6 @@ export function TrainerHomeScreen() {
       setIsLoadingDashboard(false);
       setIsRefreshing(false);
     }
-  };
-
-  // Helper function to format time ago
-  const formatTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInHours / 24);
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const quickActions = [

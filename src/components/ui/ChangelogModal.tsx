@@ -496,7 +496,7 @@ export function ChangelogModal({ visible, onClose }: ChangelogModalProps) {
                 lineHeight: fontSize * 1.4,
                 maxWidth: 280,
               }}>
-                You're running the latest version of DE-Trainer. Check back later for updates!
+                You're running the latest version of Jejak Atlet. Check back later for updates!
               </Text>
             </View>
           )}

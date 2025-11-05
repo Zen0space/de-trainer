@@ -1,4 +1,4 @@
-# DE-Trainer Authentication System Implementation
+# Jejak Atlet Authentication System Implementation
 
 ## 📋 Project Overview
 Building a role-based authentication system for a trainer-athlete fitness tracking app using:
@@ -293,7 +293,7 @@ graph TD
 - **Professional UI**: Modern design with animations and transitions
 
 ### 🚀 **Ready for Deployment**
-The complete DE-Trainer app is now functional with:
+The complete Jejak Atlet app is now functional with:
 - Full authentication system for trainers and athletes
 - Comprehensive athlete management for trainers
 - Training log and progress tracking

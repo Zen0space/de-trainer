@@ -5,6 +5,10 @@ import { Feather } from '@expo/vector-icons';
 import { ProfileScreen } from './ProfileScreen';
 import { ChangelogModal } from '../../components/ui/ChangelogModal';
 import { PrivacyPolicyModal } from '../../components/ui/PrivacyPolicyModal';
+import { PrivacySecurityScreen } from '../shared/PrivacySecurityScreen';
+import { TermsOfServiceScreen } from '../shared/TermsOfServiceScreen';
+import { SyncDataCard } from '../../components/ui/SyncDataCard';
+import { clearLocalDatabase } from '../../lib/local-database';
 
 export function SettingsScreen() {
   const { user, logout } = useSession();
@@ -12,6 +16,8 @@ export function SettingsScreen() {
   const [showProfile, setShowProfile] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showPrivacySecurity, setShowPrivacySecurity] = useState(false);
+  const [showTermsOfService, setShowTermsOfService] = useState(false);
   
   // Responsive design
   const isSmallScreen = width < 380;
@@ -39,6 +45,31 @@ export function SettingsScreen() {
               await logout();
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will delete all local data and you will need to sync again. Are you sure?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear Cache',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearLocalDatabase();
+              Alert.alert('Success', 'Local cache cleared successfully. Please sync to restore your data.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to clear cache. Please try again.');
             }
           },
         },
@@ -131,6 +162,16 @@ export function SettingsScreen() {
     return <ProfileScreen onBack={() => setShowProfile(false)} />;
   }
 
+  // Show PrivacySecurityScreen if requested
+  if (showPrivacySecurity) {
+    return <PrivacySecurityScreen onBack={() => setShowPrivacySecurity(false)} />;
+  }
+
+  // Show TermsOfServiceScreen if requested
+  if (showTermsOfService) {
+    return <TermsOfServiceScreen onBack={() => setShowTermsOfService(false)} />;
+  }
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
@@ -193,18 +234,6 @@ export function SettingsScreen() {
               subtitle={`${user?.full_name || 'Unknown'} • ${user?.email || 'No email'}`}
               onPress={() => setShowProfile(true)}
             />
-            <SettingItem
-              icon="key"
-              title="Change Password"
-              subtitle="Update your account password"
-              onPress={() => Alert.alert('Password', 'Change password coming soon!')}
-            />
-            <SettingItem
-              icon="shield"
-              title="Privacy & Security"
-              subtitle="Control your privacy settings"
-              onPress={() => Alert.alert('Privacy', 'Privacy settings coming soon!')}
-            />
           </View>
 
           {/* Preferences Section */}
@@ -216,33 +245,19 @@ export function SettingsScreen() {
             overflow: 'hidden',
           }}>
             <SettingItem
-              icon="bell"
-              title="Notifications"
-              subtitle="Manage push notifications and alerts"
-              onPress={() => Alert.alert('Notifications', 'Notification settings coming soon!')}
-            />
-            <SettingItem
-              icon="moon"
-              title="Dark Mode"
-              subtitle="Switch between light and dark themes"
-              onPress={() => Alert.alert('Theme', 'Dark mode coming soon!')}
-            />
-            <SettingItem
               icon="globe"
               title="Language"
               subtitle="English (US)"
               onPress={() => Alert.alert('Language', 'Language settings coming soon!')}
             />
-            <SettingItem
-              icon="zap"
-              title="Performance"
-              subtitle="Optimize app performance settings"
-              onPress={() => Alert.alert('Performance', 'Performance settings coming soon!')}
-            />
           </View>
 
           {/* Data & Storage Section */}
           <SectionHeader title="Data & Storage" />
+          
+          {/* Sync Data Card */}
+          <SyncDataCard />
+          
           <View style={{
             backgroundColor: 'white',
             borderRadius: 12,
@@ -250,28 +265,10 @@ export function SettingsScreen() {
             overflow: 'hidden',
           }}>
             <SettingItem
-              icon="database"
-              title="Sync Data"
-              subtitle="Backup and sync your training data"
-              onPress={() => Alert.alert('Sync', 'Data sync coming soon!')}
-            />
-            <SettingItem
-              icon="download"
-              title="Export Data"
-              subtitle="Download your data as CSV or PDF"
-              onPress={() => Alert.alert('Export', 'Data export coming soon!')}
-            />
-            <SettingItem
               icon="trash-2"
               title="Clear Cache"
-              subtitle="Free up storage space"
-              onPress={() => Alert.alert('Cache', 'Clear cache coming soon!')}
-            />
-            <SettingItem
-              icon="hard-drive"
-              title="Storage Usage"
-              subtitle="View app storage details"
-              onPress={() => Alert.alert('Storage', 'Storage details coming soon!')}
+              subtitle="Clear local database cache"
+              onPress={handleClearCache}
             />
           </View>
 
@@ -299,7 +296,7 @@ export function SettingsScreen() {
               icon="file-text"
               title="Terms of Service"
               subtitle="Read our terms and conditions"
-              onPress={() => Alert.alert('Terms', 'Terms of service coming soon!')}
+              onPress={() => setShowTermsOfService(true)}
             />
             <SettingItem
               icon="shield"

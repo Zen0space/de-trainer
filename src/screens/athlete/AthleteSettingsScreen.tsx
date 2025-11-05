@@ -6,6 +6,11 @@ import { AthleteProfileScreen } from './AthleteProfileScreen';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { ChangelogModal } from '../../components/ui/ChangelogModal';
 import { PrivacyPolicyModal } from '../../components/ui/PrivacyPolicyModal';
+import { PrivacySecurityScreen } from '../shared/PrivacySecurityScreen';
+import { TermsOfServiceScreen } from '../shared/TermsOfServiceScreen';
+import { SyncDataCard } from '../../components/ui/SyncDataCard';
+import { formatTimeAgoShort } from '../../lib/date-utils';
+import { clearLocalDatabase } from '../../lib/local-database';
 
 interface Notification {
   id: number;
@@ -25,6 +30,8 @@ export function AthleteSettingsScreen() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showPrivacySecurity, setShowPrivacySecurity] = useState(false);
+  const [showTermsOfService, setShowTermsOfService] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -171,6 +178,31 @@ export function AthleteSettingsScreen() {
     );
   };
 
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will delete all local data and you will need to sync again. Are you sure?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear Cache',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearLocalDatabase();
+              Alert.alert('Success', 'Local cache cleared successfully. Please sync to restore your data.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to clear cache. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const SettingItem = ({ 
     icon, 
     title, 
@@ -253,18 +285,6 @@ export function AthleteSettingsScreen() {
 
   // Notification Item Component
   const NotificationItem = ({ notification }: { notification: Notification }) => {
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffHours / 24);
-      
-      if (diffHours < 1) return 'Just now';
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays < 7) return `${diffDays}d ago`;
-      return date.toLocaleDateString();
-    };
 
     const getNotificationIcon = (type: string) => {
       switch (type) {
@@ -338,7 +358,7 @@ export function AthleteSettingsScreen() {
             fontSize: fontSize - 3,
             color: '#9ca3af'
           }}>
-            {formatDate(notification.created_at)}
+            {formatTimeAgoShort(notification.created_at)}
           </Text>
         </View>
 
@@ -491,6 +511,16 @@ export function AthleteSettingsScreen() {
     return <NotificationsScreen />;
   }
 
+  // Show PrivacySecurityScreen if requested
+  if (showPrivacySecurity) {
+    return <PrivacySecurityScreen onBack={() => setShowPrivacySecurity(false)} />;
+  }
+
+  // Show TermsOfServiceScreen if requested
+  if (showTermsOfService) {
+    return <TermsOfServiceScreen onBack={() => setShowTermsOfService(false)} />;
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
       <ScrollView
@@ -552,18 +582,6 @@ export function AthleteSettingsScreen() {
               subtitle={`${user?.full_name} • ${user?.email}`}
               onPress={() => setShowProfile(true)}
             />
-            <SettingItem
-              icon="key"
-              title="Change Password"
-              subtitle="Update your account password"
-              onPress={() => Alert.alert('Password', 'Change password coming soon!')}
-            />
-            <SettingItem
-              icon="shield"
-              title="Privacy & Security"
-              subtitle="Control your privacy settings"
-              onPress={() => Alert.alert('Privacy', 'Privacy settings coming soon!')}
-            />
           </View>
 
           {/* Training Section */}
@@ -609,38 +627,19 @@ export function AthleteSettingsScreen() {
             overflow: 'hidden',
           }}>
             <SettingItem
-              icon="bell"
-              title="Notifications"
-              subtitle={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : "View your notifications and alerts"}
-              onPress={() => {
-                setShowNotifications(true);
-                // Fetch notifications when opening
-                fetchNotifications();
-              }}
-              iconColor={unreadCount > 0 ? "#3b82f6" : "#6b7280"}
-            />
-            <SettingItem
-              icon="moon"
-              title="Dark Mode"
-              subtitle="Switch between light and dark themes"
-              onPress={() => Alert.alert('Theme', 'Dark mode coming soon!')}
-            />
-            <SettingItem
               icon="globe"
               title="Language"
               subtitle="English (US)"
               onPress={() => Alert.alert('Language', 'Language settings coming soon!')}
             />
-            <SettingItem
-              icon="smartphone"
-              title="Units"
-              subtitle="Metric • Imperial"
-              onPress={() => Alert.alert('Units', 'Unit settings coming soon!')}
-            />
           </View>
 
           {/* Data & Progress Section */}
           <SectionHeader title="Data & Progress" />
+          
+          {/* Sync Data Card */}
+          <SyncDataCard />
+          
           <View style={{
             backgroundColor: 'white',
             borderRadius: 12,
@@ -648,16 +647,10 @@ export function AthleteSettingsScreen() {
             overflow: 'hidden',
           }}>
             <SettingItem
-              icon="database"
-              title="Sync Data"
-              subtitle="Backup and sync your progress data"
-              onPress={() => Alert.alert('Sync', 'Data sync coming soon!')}
-            />
-            <SettingItem
-              icon="download"
-              title="Export Progress"
-              subtitle="Download your progress as CSV or PDF"
-              onPress={() => Alert.alert('Export', 'Data export coming soon!')}
+              icon="trash-2"
+              title="Clear Cache"
+              subtitle="Clear local database cache"
+              onPress={handleClearCache}
             />
             <SettingItem
               icon="heart"
@@ -709,7 +702,7 @@ export function AthleteSettingsScreen() {
               icon="file-text"
               title="Terms of Service"
               subtitle="Read our terms and conditions"
-              onPress={() => Alert.alert('Terms', 'Terms of service coming soon!')}
+              onPress={() => setShowTermsOfService(true)}
             />
             <SettingItem
               icon="shield-check"

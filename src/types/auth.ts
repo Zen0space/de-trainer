@@ -1,4 +1,4 @@
-// Authentication Type Definitions for DE-Trainer App
+// Authentication Type Definitions for Jejak Atlet App
 
 export type UserRole = 'trainer' | 'athlete';
 

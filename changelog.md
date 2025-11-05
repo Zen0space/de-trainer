@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to DE-Trainer will be documented in this file.
+All notable changes to Jejak Atlet will be documented in this file.
 
 ## [1.3.11] - 2025-09-21
 
