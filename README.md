@@ -120,6 +120,32 @@ export default function MyComponent() {
 - NativeWind className props are type-safe
 - Auto-completion for Tailwind classes
 
+### Version Management
+
+Bump the app version using the built-in scripts:
+
+```bash
+# Bump patch version (0.2.4 → 0.2.5)
+npm run bump
+
+# Bump minor version (0.2.4 → 0.3.0)
+npm run bump:minor
+
+# Bump major version (0.2.4 → 1.0.0)
+npm run bump:major
+```
+
+The script automatically updates:
+- `package.json` version
+- `app.json` expo version
+
+After bumping, commit and build:
+```bash
+git add .
+git commit -m "chore: bump version to X.X.X"
+eas build --platform android --profile production
+```
+
 ## Building for Production
 
 ### Android
