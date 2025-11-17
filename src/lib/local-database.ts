@@ -159,6 +159,105 @@ async function createTables(): Promise<void> {
       );
     `);
 
+    // Workout templates table (MVP - simplified)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trainer_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME,
+        is_dirty BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    `);
+
+    // Exercises table (MVP - system exercises only)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS exercises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        muscle_group TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME,
+        is_dirty BOOLEAN DEFAULT FALSE
+      );
+    `);
+
+    // Workout exercises table (MVP - simplified)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_exercises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workout_template_id INTEGER NOT NULL,
+        exercise_id INTEGER NOT NULL,
+        order_index INTEGER NOT NULL,
+        sets INTEGER NOT NULL,
+        reps INTEGER NOT NULL,
+        rest_time INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME,
+        is_dirty BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
+        FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
+      );
+    `);
+
+    // Workout assignments table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workout_template_id INTEGER NOT NULL,
+        athlete_id INTEGER NOT NULL,
+        trainer_id INTEGER NOT NULL,
+        scheduled_date DATE NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped', 'cancelled')),
+        started_at DATETIME,
+        completed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME,
+        is_dirty BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
+        FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    `);
+
+    // Workout session progress table (MVP - simplified)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_session_progress (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workout_assignment_id INTEGER NOT NULL,
+        workout_exercise_id INTEGER NOT NULL,
+        set_number INTEGER NOT NULL,
+        completed BOOLEAN DEFAULT FALSE,
+        completed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME,
+        is_dirty BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (workout_assignment_id) REFERENCES workout_assignments (id) ON DELETE CASCADE,
+        FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises (id) ON DELETE CASCADE
+      );
+    `);
+
+    // Indexes for workout tables
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_workout_templates_trainer ON workout_templates (trainer_id);
+      CREATE INDEX IF NOT EXISTS idx_exercises_muscle_group ON exercises (muscle_group);
+      CREATE INDEX IF NOT EXISTS idx_workout_exercises_template ON workout_exercises (workout_template_id);
+      CREATE INDEX IF NOT EXISTS idx_workout_exercises_order ON workout_exercises (workout_template_id, order_index);
+      CREATE INDEX IF NOT EXISTS idx_workout_assignments_athlete ON workout_assignments (athlete_id);
+      CREATE INDEX IF NOT EXISTS idx_workout_assignments_trainer ON workout_assignments (trainer_id);
+      CREATE INDEX IF NOT EXISTS idx_workout_assignments_status ON workout_assignments (status);
+      CREATE INDEX IF NOT EXISTS idx_workout_assignments_date ON workout_assignments (scheduled_date);
+      CREATE INDEX IF NOT EXISTS idx_workout_session_progress_assignment ON workout_session_progress (workout_assignment_id);
+    `);
+
     // Sync metadata table to track sync status
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS sync_metadata (
@@ -177,8 +276,84 @@ async function createTables(): Promise<void> {
       INSERT OR IGNORE INTO sync_metadata (id, last_sync_at, sync_status)
       VALUES (1, NULL, 'idle');
     `);
+
+    // Seed exercises if table is empty
+    await seedExercises();
   } catch (error) {
     console.error('❌ Error creating tables:', error);
+    throw error;
+  }
+}
+
+// Seed exercises table with common exercises
+async function seedExercises(): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  
+  try {
+    // Check if exercises already exist
+    const existingExercises = await db.getFirstAsync('SELECT COUNT(*) as count FROM exercises');
+    if (existingExercises && (existingExercises as any).count > 0) {
+      console.log('✅ Exercises already seeded');
+      return;
+    }
+
+    // Seed exercises covering major muscle groups
+    const exercises = [
+      // Chest exercises
+      { name: 'Barbell Bench Press', muscle_group: 'chest' },
+      { name: 'Dumbbell Bench Press', muscle_group: 'chest' },
+      { name: 'Push-ups', muscle_group: 'chest' },
+      { name: 'Incline Dumbbell Press', muscle_group: 'chest' },
+      { name: 'Cable Chest Fly', muscle_group: 'chest' },
+      
+      // Back exercises
+      { name: 'Pull-ups', muscle_group: 'back' },
+      { name: 'Barbell Rows', muscle_group: 'back' },
+      { name: 'Lat Pulldown', muscle_group: 'back' },
+      { name: 'Dumbbell Rows', muscle_group: 'back' },
+      { name: 'Deadlift', muscle_group: 'back' },
+      
+      // Legs exercises
+      { name: 'Barbell Squat', muscle_group: 'legs' },
+      { name: 'Leg Press', muscle_group: 'legs' },
+      { name: 'Lunges', muscle_group: 'legs' },
+      { name: 'Romanian Deadlift', muscle_group: 'legs' },
+      { name: 'Leg Curl', muscle_group: 'legs' },
+      { name: 'Calf Raises', muscle_group: 'legs' },
+      
+      // Shoulders exercises
+      { name: 'Overhead Press', muscle_group: 'shoulders' },
+      { name: 'Dumbbell Shoulder Press', muscle_group: 'shoulders' },
+      { name: 'Lateral Raises', muscle_group: 'shoulders' },
+      { name: 'Front Raises', muscle_group: 'shoulders' },
+      { name: 'Face Pulls', muscle_group: 'shoulders' },
+      
+      // Arms exercises
+      { name: 'Barbell Curl', muscle_group: 'arms' },
+      { name: 'Dumbbell Curl', muscle_group: 'arms' },
+      { name: 'Tricep Dips', muscle_group: 'arms' },
+      { name: 'Tricep Pushdown', muscle_group: 'arms' },
+      { name: 'Hammer Curls', muscle_group: 'arms' },
+      
+      // Core exercises
+      { name: 'Plank', muscle_group: 'core' },
+      { name: 'Crunches', muscle_group: 'core' },
+      { name: 'Russian Twists', muscle_group: 'core' },
+      { name: 'Leg Raises', muscle_group: 'core' },
+      { name: 'Mountain Climbers', muscle_group: 'core' },
+    ];
+
+    // Insert exercises
+    for (const exercise of exercises) {
+      await db.runAsync(
+        'INSERT INTO exercises (name, muscle_group) VALUES (?, ?)',
+        [exercise.name, exercise.muscle_group]
+      );
+    }
+
+    console.log(`✅ Seeded ${exercises.length} exercises`);
+  } catch (error) {
+    console.error('❌ Error seeding exercises:', error);
     throw error;
   }
 }
@@ -341,8 +516,12 @@ export async function updateSyncMetadata(data: {
 export async function clearLocalDatabase(): Promise<void> {
   const db = getLocalDatabase();
   try {
-    // Delete all data from tables
+    // Delete all data from tables (order matters due to foreign keys)
     await db.execAsync(`
+      DELETE FROM workout_session_progress;
+      DELETE FROM workout_assignments;
+      DELETE FROM workout_exercises;
+      DELETE FROM workout_templates;
       DELETE FROM notifications;
       DELETE FROM test_results;
       DELETE FROM enrollments;
@@ -353,6 +532,8 @@ export async function clearLocalDatabase(): Promise<void> {
       DELETE FROM users;
       UPDATE sync_metadata SET last_sync_at = NULL, sync_status = 'idle', last_error = NULL, total_synced = 0;
     `);
+    
+    // Note: We don't delete exercises as they are system data that should persist
   } catch (error) {
     console.error('❌ Error clearing local database:', error);
     throw error;

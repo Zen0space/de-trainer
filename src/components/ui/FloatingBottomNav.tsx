@@ -73,7 +73,7 @@ const trainerNavItems: NavItem[] = [
 
 const athleteNavItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'home' },
-  { id: 'workouts', label: 'History', icon: 'activity' },
+  { id: 'workouts', label: 'Workouts', icon: 'clipboard' },
   { id: 'trainer', label: 'Trainer', icon: 'user-check' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];

@@ -5,14 +5,23 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SessionProvider, useSession } from './src/contexts/AuthContext';
+import { ToastProvider, useToast } from './src/contexts/ToastContext';
 import { AuthScreen } from './src/components/auth/AuthScreen';
 import { TrainerHomeScreen } from './src/screens/trainer/TrainerHomeScreen';
 import { AthleteHomeScreen } from './src/screens/athlete/AthleteHomeScreen';
 import { initializeTursoConnection } from './src/lib/turso-database';
 import { initializeLocalDatabase } from './src/lib/local-database';
+import { setToastCallback, clearToastCallback } from './src/lib/offline-api';
 
 function MainContent() {
   const { user, logout, isLoading } = useSession();
+  const { showToast } = useToast();
+  
+  // Set up toast callback for offline-api
+  useEffect(() => {
+    setToastCallback(showToast);
+    return () => clearToastCallback();
+  }, [showToast]);
   
 
   
@@ -283,8 +292,10 @@ export default function App() {
       <SafeAreaProvider>
         <KeyboardProvider>
           <SessionProvider>
-            <MainContent />
-            <StatusBar style="auto" />
+            <ToastProvider>
+              <MainContent />
+              <StatusBar style="auto" />
+            </ToastProvider>
           </SessionProvider>
         </KeyboardProvider>
       </SafeAreaProvider>

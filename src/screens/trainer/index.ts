@@ -6,3 +6,4 @@ export { ProfileScreen } from './ProfileScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { TrainerReportScreen } from './TrainerReportScreen';
 export { AthleteDetailReportScreen } from './AthleteDetailReportScreen';
+export { WorkoutBuilderScreen } from './WorkoutBuilderScreen';

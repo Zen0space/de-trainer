@@ -121,6 +121,76 @@ CREATE TABLE notifications (
 );
 
 -- =============================================
+-- WORKOUT MANAGEMENT TABLES
+-- =============================================
+
+-- Workout templates created by trainers (MVP - simplified)
+CREATE TABLE workout_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trainer_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Exercise library (MVP - system exercises only)
+CREATE TABLE exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    muscle_group TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Exercises within a workout template (MVP - simplified)
+CREATE TABLE workout_exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workout_template_id INTEGER NOT NULL,
+    exercise_id INTEGER NOT NULL,
+    order_index INTEGER NOT NULL,
+    sets INTEGER NOT NULL,
+    reps INTEGER NOT NULL,
+    rest_time INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
+    FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
+);
+
+-- Workout assignments to athletes
+CREATE TABLE workout_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workout_template_id INTEGER NOT NULL,
+    athlete_id INTEGER NOT NULL,
+    trainer_id INTEGER NOT NULL,
+    scheduled_date DATE NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped', 'cancelled')),
+    started_at DATETIME,
+    completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
+    FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Athlete's progress through a workout session (MVP - simplified)
+CREATE TABLE workout_session_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workout_assignment_id INTEGER NOT NULL,
+    workout_exercise_id INTEGER NOT NULL,
+    set_number INTEGER NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (workout_assignment_id) REFERENCES workout_assignments (id) ON DELETE CASCADE,
+    FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises (id) ON DELETE CASCADE
+);
+
+-- =============================================
 -- INDEXES FOR PERFORMANCE OPTIMIZATION
 -- =============================================
 
@@ -160,6 +230,17 @@ CREATE INDEX idx_notifications_user ON notifications (user_id);
 CREATE INDEX idx_notifications_type ON notifications (type);
 CREATE INDEX idx_notifications_read ON notifications (is_read);
 CREATE INDEX idx_notifications_created_at ON notifications (created_at);
+
+-- Workout indexes
+CREATE INDEX idx_workout_templates_trainer ON workout_templates (trainer_id);
+CREATE INDEX idx_exercises_muscle_group ON exercises (muscle_group);
+CREATE INDEX idx_workout_exercises_template ON workout_exercises (workout_template_id);
+CREATE INDEX idx_workout_exercises_order ON workout_exercises (workout_template_id, order_index);
+CREATE INDEX idx_workout_assignments_athlete ON workout_assignments (athlete_id);
+CREATE INDEX idx_workout_assignments_trainer ON workout_assignments (trainer_id);
+CREATE INDEX idx_workout_assignments_status ON workout_assignments (status);
+CREATE INDEX idx_workout_assignments_date ON workout_assignments (scheduled_date);
+CREATE INDEX idx_workout_session_progress_assignment ON workout_session_progress (workout_assignment_id);
 
 -- =============================================
 -- SAMPLE FITNESS COMPONENTS AND TESTS
@@ -220,6 +301,54 @@ INSERT OR IGNORE INTO tests (component_id, name, unit, description, improvement_
 -- Body Composition Tests
 (9, 'Body Fat Percentage', '%', 'Percentage of body fat', 'lower'),
 (9, 'BMI', 'kg/m²', 'Body Mass Index calculation', 'lower');
+
+-- =============================================
+-- SAMPLE EXERCISES FOR WORKOUT SYSTEM
+-- =============================================
+
+INSERT OR IGNORE INTO exercises (name, muscle_group) VALUES
+-- Chest exercises
+('Barbell Bench Press', 'chest'),
+('Dumbbell Bench Press', 'chest'),
+('Push-ups', 'chest'),
+('Incline Dumbbell Press', 'chest'),
+('Cable Chest Fly', 'chest'),
+
+-- Back exercises
+('Pull-ups', 'back'),
+('Barbell Rows', 'back'),
+('Lat Pulldown', 'back'),
+('Dumbbell Rows', 'back'),
+('Deadlift', 'back'),
+
+-- Legs exercises
+('Barbell Squat', 'legs'),
+('Leg Press', 'legs'),
+('Lunges', 'legs'),
+('Romanian Deadlift', 'legs'),
+('Leg Curl', 'legs'),
+('Calf Raises', 'legs'),
+
+-- Shoulders exercises
+('Overhead Press', 'shoulders'),
+('Dumbbell Shoulder Press', 'shoulders'),
+('Lateral Raises', 'shoulders'),
+('Front Raises', 'shoulders'),
+('Face Pulls', 'shoulders'),
+
+-- Arms exercises
+('Barbell Curl', 'arms'),
+('Dumbbell Curl', 'arms'),
+('Tricep Dips', 'arms'),
+('Tricep Pushdown', 'arms'),
+('Hammer Curls', 'arms'),
+
+-- Core exercises
+('Plank', 'core'),
+('Crunches', 'core'),
+('Russian Twists', 'core'),
+('Leg Raises', 'core'),
+('Mountain Climbers', 'core');
 
 -- =============================================
 -- VIEWS FOR COMMON QUERIES

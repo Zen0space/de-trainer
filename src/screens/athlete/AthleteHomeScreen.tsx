@@ -8,6 +8,10 @@ import { TrainerConnectionScreen } from './TrainerConnectionScreen';
 import { WorkoutHistoryScreen } from './WorkoutHistoryScreen';
 import { AthleteProgressScreen } from './AthleteProgressScreen';
 import { AthleteSettingsScreen } from './AthleteSettingsScreen';
+import { WorkoutListScreen } from './WorkoutListScreen';
+import { WorkoutDetailScreen } from './WorkoutDetailScreen';
+import { WorkoutExecutionScreen } from './WorkoutExecutionScreen';
+import { OfflineIndicator } from '../../components/ui/OfflineIndicator';
 import { tursoDbHelpers } from '../../lib/turso-database';
 
 interface AthleteStats {
@@ -30,6 +34,8 @@ export function AthleteHomeScreen() {
   const { user, logout } = useSession();
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState('home');
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
+  const [executingWorkoutId, setExecutingWorkoutId] = useState<number | null>(null);
   const [stats, setStats] = useState<AthleteStats>({
     totalWorkouts: 0,
     recentTestResults: 0,
@@ -169,10 +175,65 @@ export function AthleteHomeScreen() {
     { id: 4, title: 'Goals', icon: 'target', color: '#8b5cf6' },
   ];
 
+  // Handle workout press
+  const handleWorkoutPress = (workoutId: number) => {
+    setSelectedWorkoutId(workoutId);
+  };
+
+  // Handle back from workout detail
+  const handleBackFromWorkoutDetail = () => {
+    setSelectedWorkoutId(null);
+  };
+
+  // Handle start workout
+  const handleStartWorkout = (assignmentId: number) => {
+    setExecutingWorkoutId(assignmentId);
+  };
+
+  // Handle back from workout execution
+  const handleBackFromWorkoutExecution = () => {
+    setExecutingWorkoutId(null);
+    setSelectedWorkoutId(null);
+    // Refresh dashboard data
+    fetchDashboardData();
+  };
+
+  // Handle workout complete
+  const handleWorkoutComplete = () => {
+    setExecutingWorkoutId(null);
+    setSelectedWorkoutId(null);
+    // Refresh dashboard data
+    fetchDashboardData();
+  };
+
   // Render different screens based on active tab
   const renderScreen = () => {
+    // Show workout execution if a workout is being executed
+    if (executingWorkoutId !== null) {
+      return (
+        <WorkoutExecutionScreen
+          workoutAssignmentId={executingWorkoutId}
+          onBack={handleBackFromWorkoutExecution}
+          onComplete={handleWorkoutComplete}
+        />
+      );
+    }
+
+    // Show workout detail if a workout is selected
+    if (selectedWorkoutId !== null) {
+      return (
+        <WorkoutDetailScreen
+          workoutAssignmentId={selectedWorkoutId}
+          onBack={handleBackFromWorkoutDetail}
+          onStartWorkout={handleStartWorkout}
+        />
+      );
+    }
+
     switch (activeTab) {
       case 'workouts':
+        return <WorkoutListScreen onWorkoutPress={handleWorkoutPress} />;
+      case 'history':
         return <WorkoutHistoryScreen />;
       case 'progress':
         return <AthleteProgressScreen />;
@@ -622,6 +683,7 @@ export function AthleteHomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
+      <OfflineIndicator />
       {renderScreen()}
       
       {/* Floating Bottom Navigation */}

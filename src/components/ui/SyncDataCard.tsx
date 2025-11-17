@@ -3,10 +3,12 @@ import { View, Text, Pressable, useWindowDimensions, Alert, ActivityIndicator } 
 import { Feather } from '@expo/vector-icons';
 import { syncService, SyncResult } from '../../lib/sync-service';
 import { useSession } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 export function SyncDataCard() {
   const { width } = useWindowDimensions();
   const { user } = useSession();
+  const { showSuccess, showError, showWarning } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success'>('idle');
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function SyncDataCard() {
     if (isSyncing) return;
 
     if (!user) {
-      Alert.alert('Error', 'Please log in to sync data');
+      showError('Please log in to sync data');
       return;
     }
 
@@ -57,34 +59,19 @@ export function SyncDataCard() {
         setLastSyncAt(new Date().toISOString());
         setTotalSynced(result.pushedCount + result.pulledCount);
         
-        Alert.alert(
-          'Sync Successful',
-          `${result.message}\n\nPushed: ${result.pushedCount} records\nPulled: ${result.pulledCount} records`,
-          [{ text: 'OK' }]
-        );
+        showSuccess(`Sync successful! Pushed ${result.pushedCount}, pulled ${result.pulledCount} records`);
       } else {
         setSyncStatus('error');
         setLastError(result.errors.join('; '));
         
-        Alert.alert(
-          'Sync Completed with Errors',
-          `${result.message}\n\nErrors: ${result.errors.length}`,
-          [
-            { text: 'View Details', onPress: () => showErrorDetails(result.errors) },
-            { text: 'OK', style: 'cancel' }
-          ]
-        );
+        showWarning(`Sync completed with ${result.errors.length} error(s). Check details below.`);
       }
     } catch (error) {
       setSyncStatus('error');
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setLastError(errorMessage);
       
-      Alert.alert(
-        'Sync Failed',
-        `Failed to sync data: ${errorMessage}`,
-        [{ text: 'OK' }]
-      );
+      showError(`Sync failed: ${errorMessage}`);
     } finally {
       setIsSyncing(false);
       // Reload status after sync

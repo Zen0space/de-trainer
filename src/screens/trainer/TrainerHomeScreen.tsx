@@ -5,8 +5,12 @@ import { Feather } from '@expo/vector-icons';
 import { FloatingBottomNav, renderScreenFromRoute, getRoutes } from '../../components/ui/FloatingBottomNav';
 import { ManageAthletesScreen } from './ManageAthletesScreen';
 import { AthleteDetailsScreen } from './AthleteDetailsScreen';
+import { WorkoutBuilderScreen } from './WorkoutBuilderScreen';
+import { WorkoutProgressDashboard } from '../../components/workout/WorkoutProgressDashboard';
+import { OfflineIndicator } from '../../components/ui/OfflineIndicator';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { formatTimeAgo } from '../../lib/date-utils';
+import { getTrainerWorkoutAssignments } from '../../lib/offline-api';
 
 export function TrainerHomeScreen() {
   const { user, logout } = useSession();
@@ -15,13 +19,18 @@ export function TrainerHomeScreen() {
   const [showManageAthletes, setShowManageAthletes] = useState(false);
   const [showAthleteProfile, setShowAthleteProfile] = useState(false);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
+  const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
+  const [showWorkoutProgress, setShowWorkoutProgress] = useState(false);
   
   // Dashboard data state
   const [stats, setStats] = useState({
     totalAthletes: 0,
     activeSessions: 0,
     completedSessions: 0,
-    avgProgress: 0
+    avgProgress: 0,
+    totalWorkouts: 0,
+    completedWorkouts: 0,
+    workoutCompletionRate: 0
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
@@ -94,7 +103,15 @@ export function TrainerHomeScreen() {
         AND tr.test_date >= date('now', '-30 days')
       `, [user.id]);
 
-      // Fetch recent activities
+      // Fetch workout stats
+      const workoutAssignments = await getTrainerWorkoutAssignments(user.id);
+      const totalWorkouts = workoutAssignments.length;
+      const completedWorkouts = workoutAssignments.filter((w: any) => w.status === 'completed').length;
+      const workoutCompletionRate = totalWorkouts > 0 
+        ? Math.round((completedWorkouts / totalWorkouts) * 100) 
+        : 0;
+
+      // Fetch recent activities (including workout completions)
       const activities = await tursoDbHelpers.all(`
         SELECT 
           u.full_name as athlete_name,
@@ -125,24 +142,47 @@ export function TrainerHomeScreen() {
         LIMIT 5
       `, [user.id, user.id]);
 
+      // Add recent workout completions to activities
+      const recentWorkoutCompletions = workoutAssignments
+        .filter((w: any) => w.status === 'completed' && w.completed_at)
+        .sort((a: any, b: any) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
+        .slice(0, 3)
+        .map((w: any) => ({
+          athlete_name: w.athlete_name,
+          test_name: w.workout_name,
+          activity_time: w.completed_at,
+          is_best_record: 0,
+          activity_type: 'workout_completed'
+        }));
+
+      // Merge and sort all activities
+      const allActivities = [...activities, ...recentWorkoutCompletions]
+        .sort((a, b) => new Date(b.activity_time).getTime() - new Date(a.activity_time).getTime())
+        .slice(0, 5);
+
       // Format activities for display
-      const formattedActivities = activities.map((activity: any, index: number) => ({
+      const formattedActivities = allActivities.map((activity: any, index: number) => ({
         id: index + 1,
         athlete: activity.athlete_name,
         action: activity.activity_type === 'enrollment' 
           ? 'Enrolled with you'
-          : activity.is_best_record 
-            ? `New PR in ${activity.test_name}`
-            : `Completed ${activity.test_name}`,
+          : activity.activity_type === 'workout_completed'
+            ? `Completed workout: ${activity.test_name}`
+            : activity.is_best_record 
+              ? `New PR in ${activity.test_name}`
+              : `Completed ${activity.test_name}`,
         time: formatTimeAgo(activity.activity_time),
-        type: activity.is_best_record || activity.activity_type === 'enrollment' ? 'success' : 'info'
+        type: activity.is_best_record || activity.activity_type === 'enrollment' || activity.activity_type === 'workout_completed' ? 'success' : 'info'
       })).slice(0, 3); // Show only top 3
 
       setStats({
         totalAthletes: totalAthletesResult?.count || 0,
         activeSessions: activeSessionsResult?.count || 0,
         completedSessions: completedSessionsResult?.count || 0,
-        avgProgress: progressResult?.avg_progress || 0
+        avgProgress: progressResult?.avg_progress || 0,
+        totalWorkouts,
+        completedWorkouts,
+        workoutCompletionRate
       });
       
       setRecentActivities(formattedActivities);
@@ -159,8 +199,8 @@ export function TrainerHomeScreen() {
   const quickActions = [
     { id: 1, title: 'Manage Athletes', icon: 'users', color: '#3b82f6' },
     { id: 2, title: 'Create Workout', icon: 'plus-circle', color: '#10b981' },
-    { id: 3, title: 'View Analytics', icon: 'bar-chart-2', color: '#f59e0b' },
-    { id: 4, title: 'Schedule Session', icon: 'calendar', color: '#8b5cf6' },
+    { id: 3, title: 'Workout Progress', icon: 'activity', color: '#8b5cf6' },
+    { id: 4, title: 'View Analytics', icon: 'bar-chart-2', color: '#f59e0b' },
   ];
 
   const handleTabPress = (tab: string) => {
@@ -169,6 +209,8 @@ export function TrainerHomeScreen() {
     setShowManageAthletes(false);
     setShowAthleteProfile(false);
     setSelectedAthleteId(null);
+    setShowWorkoutBuilder(false);
+    setShowWorkoutProgress(false);
   };
 
   // Handle pull-to-refresh
@@ -191,6 +233,25 @@ export function TrainerHomeScreen() {
 
   // Render different screens based on active tab
   const renderScreen = () => {
+    // Show WorkoutProgressDashboard if requested
+    if (showWorkoutProgress) {
+      return (
+        <WorkoutProgressDashboard 
+          trainerId={user?.id || 0}
+          onBack={() => setShowWorkoutProgress(false)}
+        />
+      );
+    }
+
+    // Show WorkoutBuilderScreen if requested
+    if (showWorkoutBuilder) {
+      return (
+        <WorkoutBuilderScreen 
+          onBack={() => setShowWorkoutBuilder(false)}
+        />
+      );
+    }
+
     // Show AthleteDetailsScreen if requested
     if (showAthleteProfile && selectedAthleteId) {
       return (
@@ -445,6 +506,52 @@ export function TrainerHomeScreen() {
                 Avg Progress
               </Text>
             </View>
+
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#ec4899', 
+                marginBottom: 4 
+              }}>
+                {isLoadingDashboard ? '...' : stats.completedWorkouts}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Workouts Done
+              </Text>
+            </View>
+
+            <View style={{
+              width: isSmallScreen ? 110 : 130,
+              backgroundColor: 'white',
+              padding: isSmallScreen ? 12 : 16,
+              borderRadius: 12,
+            }}>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 20 : 22, 
+                fontWeight: 'bold', 
+                color: '#06b6d4', 
+                marginBottom: 4 
+              }}>
+                {isLoadingDashboard ? '...' : `${stats.workoutCompletionRate}%`}
+              </Text>
+              <Text style={{ 
+                fontSize: isSmallScreen ? 11 : 12, 
+                color: '#6b7280',
+                lineHeight: 16
+              }}>
+                Workout Rate
+              </Text>
+            </View>
           </ScrollView>
 
           {/* Quick Actions */}
@@ -487,17 +594,9 @@ export function TrainerHomeScreen() {
                     } else if (action.title === 'View Analytics') {
                       setActiveTab('reports');
                     } else if (action.title === 'Create Workout') {
-                      Alert.alert(
-                        'Create Workout',
-                        'Workout creation feature is coming soon! Stay tuned for updates.',
-                        [{ text: 'OK' }]
-                      );
-                    } else if (action.title === 'Schedule Session') {
-                      Alert.alert(
-                        'Schedule Session',
-                        'Session scheduling feature is coming soon! Stay tuned for updates.',
-                        [{ text: 'OK' }]
-                      );
+                      setShowWorkoutBuilder(true);
+                    } else if (action.title === 'Workout Progress') {
+                      setShowWorkoutProgress(true);
                     }
                   }}
                 >
@@ -686,6 +785,7 @@ export function TrainerHomeScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      <OfflineIndicator />
       {renderScreen()}
       
       {/* Floating Bottom Navigation */}
