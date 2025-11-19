@@ -3,6 +3,7 @@ import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, RefreshC
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { tursoDbHelpers } from '../../lib/turso-database';
+import { BodyMetricsTab } from '../../components/athlete/BodyMetricsTab';
 
 interface AthleteProfile {
   id: number;
@@ -45,6 +46,7 @@ export function AthleteDetailsScreen({
 }) {
   const { user } = useSession();
   const { width } = useWindowDimensions();
+  const tabScrollViewRef = React.useRef<ScrollView>(null);
   
   // Responsive design
   const isSmallScreen = width < 380;
@@ -64,7 +66,7 @@ export function AthleteDetailsScreen({
   const [trainingStats, setTrainingStats] = useState<TrainingStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'logs'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'logs' | 'metrics'>('profile');
   const [sortBy, setSortBy] = useState<'date' | 'test' | 'result'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -247,19 +249,22 @@ export function AthleteDetailsScreen({
     <Pressable
       onPress={onPress}
       style={{
-        flex: 1,
         paddingVertical: 12,
         paddingHorizontal: 16,
         backgroundColor: isActive ? '#3b82f6' : 'transparent',
         borderRadius: 8,
         alignItems: 'center',
+        minWidth: 100,
       }}
     >
-      <Text style={{
-        fontSize: fontSize,
-        fontWeight: isActive ? '600' : '400',
-        color: isActive ? 'white' : '#6b7280',
-      }}>
+      <Text 
+        style={{
+          fontSize: fontSize,
+          fontWeight: isActive ? '600' : '400',
+          color: isActive ? 'white' : '#6b7280',
+        }}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>
@@ -510,24 +515,61 @@ export function AthleteDetailsScreen({
             padding: 4,
             borderRadius: 12,
             marginBottom: spacing,
-            flexDirection: 'row',
           }}>
-            <TabButton
-              id="profile"
-              label="Profile"
-              isActive={activeTab === 'profile'}
-              onPress={() => setActiveTab('profile')}
-            />
-            <TabButton
-              id="logs"
-              label={`Training Logs (${trainingLogs.length})`}
-              isActive={activeTab === 'logs'}
-              onPress={() => setActiveTab('logs')}
-            />
+            <ScrollView 
+              ref={tabScrollViewRef}
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 4 }}
+            >
+              <View onLayout={(e) => {
+                if (activeTab === 'profile') {
+                  tabScrollViewRef.current?.scrollTo({ x: 0, animated: true });
+                }
+              }}>
+                <TabButton
+                  id="profile"
+                  label="Profile"
+                  isActive={activeTab === 'profile'}
+                  onPress={() => setActiveTab('profile')}
+                />
+              </View>
+              <View onLayout={(e) => {
+                if (activeTab === 'logs') {
+                  const x = e.nativeEvent.layout.x - 20;
+                  tabScrollViewRef.current?.scrollTo({ x: Math.max(0, x), animated: true });
+                }
+              }}>
+                <TabButton
+                  id="logs"
+                  label={`Training Logs (${trainingLogs.length})`}
+                  isActive={activeTab === 'logs'}
+                  onPress={() => setActiveTab('logs')}
+                />
+              </View>
+              <View onLayout={(e) => {
+                if (activeTab === 'metrics') {
+                  const x = e.nativeEvent.layout.x - 20;
+                  tabScrollViewRef.current?.scrollTo({ x: Math.max(0, x), animated: true });
+                }
+              }}>
+                <TabButton
+                  id="metrics"
+                  label="Body Metrics"
+                  isActive={activeTab === 'metrics'}
+                  onPress={() => setActiveTab('metrics')}
+                />
+              </View>
+            </ScrollView>
           </View>
 
           {/* Content */}
-          {activeTab === 'profile' ? (
+          {activeTab === 'metrics' ? (
+            <BodyMetricsTab 
+              athleteId={athleteId} 
+              athleteName={athleteProfile.full_name}
+            />
+          ) : activeTab === 'profile' ? (
             <>
               {/* Training Stats */}
               {trainingStats && (
