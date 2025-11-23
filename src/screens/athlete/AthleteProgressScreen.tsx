@@ -4,6 +4,7 @@ import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
+import { AthleteBodyMetricsStats } from '../../components/athlete/AthleteBodyMetricsStats';
 
 interface ProgressData {
   id: number;
@@ -81,6 +82,7 @@ export function AthleteProgressScreen() {
   const [recentAchievements, setRecentAchievements] = useState<ProgressData[]>([]);
   const [chartData, setChartData] = useState<TestChartData[]>([]);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>('30d');
+  const [selectedTab, setSelectedTab] = useState<'stats' | 'bodyMetrics'>('stats');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -287,6 +289,55 @@ export function AthleteProgressScreen() {
       data: test.data.filter(point => point.x >= cutoffDate)
     })).filter(test => test.data.length >= 1);
   }, [chartData, selectedTimePeriod]);
+
+  const TabSelector = () => (
+    <View style={{
+      flexDirection: 'row',
+      backgroundColor: 'white',
+      borderRadius: 8,
+      padding: 4,
+      marginBottom: spacing,
+    }}>
+      <Pressable
+        onPress={() => setSelectedTab('stats')}
+        style={{
+          flex: 1,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          borderRadius: 6,
+          backgroundColor: selectedTab === 'stats' ? '#10b981' : 'transparent',
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{
+          fontSize: fontSize - 1,
+          fontWeight: selectedTab === 'stats' ? '600' : '500',
+          color: selectedTab === 'stats' ? 'white' : '#6b7280'
+        }}>
+          Stats
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => setSelectedTab('bodyMetrics')}
+        style={{
+          flex: 1,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          borderRadius: 6,
+          backgroundColor: selectedTab === 'bodyMetrics' ? '#10b981' : 'transparent',
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{
+          fontSize: fontSize - 1,
+          fontWeight: selectedTab === 'bodyMetrics' ? '600' : '500',
+          color: selectedTab === 'bodyMetrics' ? 'white' : '#6b7280'
+        }}>
+          Body Metrics
+        </Text>
+      </Pressable>
+    </View>
+  );
 
   const TimePeriodSelector = () => (
     <View style={{
@@ -800,146 +851,156 @@ export function AthleteProgressScreen() {
             </View>
           ) : progressData.length > 0 ? (
             <>
-              {/* Progress Stats */}
-              <View style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                marginBottom: spacing,
-                gap: spacing / 2
-              }}>
-                <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-                  <View style={{
-                    backgroundColor: 'white',
-                    padding: cardPadding,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
-                      {progressStats.totalPersonalRecords}
-                    </Text>
-                    <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Personal Records</Text>
-                  </View>
-                </View>
-                
-                <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-                  <View style={{
-                    backgroundColor: 'white',
-                    padding: cardPadding,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
-                      {progressStats.improvingComponents}
-                    </Text>
-                    <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Improving Areas</Text>
-                  </View>
-                </View>
-                
-                <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-                  <View style={{
-                    backgroundColor: 'white',
-                    padding: cardPadding,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
-                      {progressStats.activeComponents}
-                    </Text>
-                    <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Active Components</Text>
-                  </View>
-                </View>
-                
-                <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
-                  <View style={{
-                    backgroundColor: 'white',
-                    padding: cardPadding,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', marginBottom: 4 }}>
-                      {progressStats.recentPersonalRecords}
-                    </Text>
-                    <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Recent PRs (30d)</Text>
-                  </View>
-                </View>
-              </View>
+              {/* Tab Selector */}
+              <TabSelector />
 
-
-
-              {/* Progress Charts */}
-              {chartData.length > 0 ? (
-                <View style={{ marginBottom: spacing }}>
-                  <Text style={{
-                    fontSize: fontSize + 2,
-                    fontWeight: 'bold',
-                    color: '#1f2937',
-                    marginBottom: 12,
-                    paddingHorizontal: 4
+              {/* Tab Content */}
+              {selectedTab === 'stats' ? (
+                <>
+                  {/* Progress Stats */}
+                  <View style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    marginBottom: spacing,
+                    gap: spacing / 2
                   }}>
-                    Progress Charts 📈
-                  </Text>
-                  
-                  <TimePeriodSelector />
-                  
-                  {filteredChartData.map((testData) => (
-                    <TestProgressChart key={testData.testId} testData={testData} />
-                  ))}
-                </View>
-              ) : progressData.length > 0 ? (
-                <View style={{
-                  backgroundColor: 'white',
-                  padding: cardPadding,
-                  borderRadius: 16,
-                  marginBottom: spacing,
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: '#f3f4f6',
-                      borderRadius: 20,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12
-                    }}>
-                      <Feather name="bar-chart-2" size={20} color="#6b7280" />
+                    <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
+                      <View style={{
+                        backgroundColor: 'white',
+                        padding: cardPadding,
+                        borderRadius: 12,
+                      }}>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#10b981', marginBottom: 4 }}>
+                          {progressStats.totalPersonalRecords}
+                        </Text>
+                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Personal Records</Text>
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
+
+                    <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
+                      <View style={{
+                        backgroundColor: 'white',
+                        padding: cardPadding,
+                        borderRadius: 12,
+                      }}>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#3b82f6', marginBottom: 4 }}>
+                          {progressStats.improvingComponents}
+                        </Text>
+                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Improving Areas</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
+                      <View style={{
+                        backgroundColor: 'white',
+                        padding: cardPadding,
+                        borderRadius: 12,
+                      }}>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#f59e0b', marginBottom: 4 }}>
+                          {progressStats.activeComponents}
+                        </Text>
+                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Active Components</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ flex: 1, minWidth: isSmallScreen ? '48%' : 150 }}>
+                      <View style={{
+                        backgroundColor: 'white',
+                        padding: cardPadding,
+                        borderRadius: 12,
+                      }}>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#8b5cf6', marginBottom: 4 }}>
+                          {progressStats.recentPersonalRecords}
+                        </Text>
+                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>Recent PRs (30d)</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Progress Charts */}
+                  {chartData.length > 0 ? (
+                    <View style={{ marginBottom: spacing }}>
                       <Text style={{
-                        fontSize: fontSize + 1,
+                        fontSize: fontSize + 2,
                         fontWeight: 'bold',
                         color: '#1f2937',
-                        marginBottom: 2
+                        marginBottom: 12,
+                        paddingHorizontal: 4
                       }}>
-                        Progress Charts Coming Soon! 📈
+                        Progress Charts 📈
                       </Text>
-                      <Text style={{
-                        fontSize: fontSize - 1,
-                        color: '#6b7280'
-                      }}>
-                        Charts will appear once you repeat the same tests
-                      </Text>
+
+                      <TimePeriodSelector />
+
+                      {filteredChartData.map((testData) => (
+                        <TestProgressChart key={testData.testId} testData={testData} />
+                      ))}
                     </View>
-                  </View>
-                  
-                  <View style={{
-                    backgroundColor: '#f3f3f3',
-                    padding: 12,
-                    borderRadius: 8,
-                    borderLeftWidth: 4,
-                    borderLeftColor: '#3b82f6'
-                  }}>
-                    <Text style={{
-                      fontSize: fontSize - 1,
-                      color: '#374151',
-                      lineHeight: 20
+                  ) : progressData.length > 0 ? (
+                    <View style={{
+                      backgroundColor: 'white',
+                      padding: cardPadding,
+                      borderRadius: 16,
+                      marginBottom: spacing,
                     }}>
-                      <Text style={{ fontWeight: '600' }}>How to see progress charts:</Text>{'\n'}
-                      • Perform the same fitness test multiple times{'\n'}
-                      • For example: Do "1RM Bench Press" again next week{'\n'}
-                      • Charts will automatically appear to show your improvement over time
-                    </Text>
-                  </View>
-                </View>
-              ) : null}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <View style={{
+                          width: 40,
+                          height: 40,
+                          backgroundColor: '#f3f4f6',
+                          borderRadius: 20,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: 12
+                        }}>
+                          <Feather name="bar-chart-2" size={20} color="#6b7280" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            fontSize: fontSize + 1,
+                            fontWeight: 'bold',
+                            color: '#1f2937',
+                            marginBottom: 2
+                          }}>
+                            Progress Charts Coming Soon! 📈
+                          </Text>
+                          <Text style={{
+                            fontSize: fontSize - 1,
+                            color: '#6b7280'
+                          }}>
+                            Charts will appear once you repeat the same tests
+                          </Text>
+                        </View>
+                      </View>
 
-
+                      <View style={{
+                        backgroundColor: '#f3f3f3',
+                        padding: 12,
+                        borderRadius: 8,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#3b82f6'
+                      }}>
+                        <Text style={{
+                          fontSize: fontSize - 1,
+                          color: '#374151',
+                          lineHeight: 20
+                        }}>
+                          <Text style={{ fontWeight: '600' }}>How to see progress charts:</Text>{'\n'}
+                          • Perform the same fitness test multiple times{'\n'}
+                          • For example: Do "1RM Bench Press" again next week{'\n'}
+                          • Charts will automatically appear to show your improvement over time
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                /* Body Metrics Tab */
+                <AthleteBodyMetricsStats
+                  athleteId={user?.id || 0}
+                  athleteName={user?.name || 'Athlete'}
+                />
+              )}
             </>
           ) : (
             /* Empty State */

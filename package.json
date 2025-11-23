@@ -1,6 +1,6 @@
 {
   "name": "jejak-atlet",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@expo/cli": "^0.24.20",
+    "@libsql/client": "^0.15.15",
     "@op-engineering/op-sqlite": "^14.1.4",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/netinfo": "^11.4.1",
@@ -25,7 +26,7 @@
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "expo": "~54.0.24",
+    "expo": "~54.0.25",
     "expo-crypto": "~15.0.7",
     "expo-linear-gradient": "~15.0.7",
     "expo-secure-store": "~15.0.7",

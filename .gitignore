@@ -93,3 +93,5 @@ temp/
 *.sqlite3
 
 .kiro/
+.claude/
+.clauderc

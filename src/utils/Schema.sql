@@ -242,6 +242,32 @@ CREATE INDEX idx_workout_assignments_status ON workout_assignments (status);
 CREATE INDEX idx_workout_assignments_date ON workout_assignments (scheduled_date);
 CREATE INDEX idx_workout_session_progress_assignment ON workout_session_progress (workout_assignment_id);
 
+-- Calendar event system indexes
+CREATE INDEX idx_events_creator ON events (created_by_user_id);
+CREATE INDEX idx_events_type ON events (event_type_id);
+CREATE INDEX idx_events_dates ON events (start_date, end_date);
+CREATE INDEX idx_events_status ON events (status);
+CREATE INDEX idx_events_public ON events (is_public);
+CREATE INDEX idx_events_location ON events (location);
+
+-- Event participants indexes
+CREATE INDEX idx_event_participants_event ON event_participants (event_id);
+CREATE INDEX idx_event_participants_athlete ON event_participants (athlete_id);
+CREATE INDEX idx_event_participants_assigned_by ON event_participants (assigned_by_user_id);
+CREATE INDEX idx_event_participants_status ON event_participants (status);
+CREATE INDEX idx_event_participants_registration ON event_participants (registration_date);
+
+-- Event reminders indexes
+CREATE INDEX idx_event_reminders_event ON event_reminders (event_id);
+CREATE INDEX idx_event_reminders_user ON event_reminders (user_id);
+CREATE INDEX idx_event_reminders_time ON event_reminders (reminder_time);
+CREATE INDEX idx_event_reminders_sent ON event_reminders (is_sent);
+
+-- Event results indexes
+CREATE INDEX idx_event_results_event ON event_results (event_id);
+CREATE INDEX idx_event_results_athlete ON event_results (athlete_id);
+CREATE INDEX idx_event_results_rank ON event_results (rank_position);
+
 -- =============================================
 -- SAMPLE FITNESS COMPONENTS AND TESTS
 -- =============================================
@@ -303,6 +329,98 @@ INSERT OR IGNORE INTO tests (component_id, name, unit, description, improvement_
 (9, 'BMI', 'kg/m²', 'Body Mass Index calculation', 'lower');
 
 -- =============================================
+-- CALENDAR EVENT SYSTEM TABLES
+-- =============================================
+
+-- Event types for categorization
+CREATE TABLE event_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    color TEXT NOT NULL DEFAULT '#3b82f6', -- Hex color for UI
+    icon TEXT, -- Icon name for UI (e.g., 'trophy', 'calendar', 'flag')
+    is_system BOOLEAN DEFAULT FALSE, -- System events cannot be deleted
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Main events table
+CREATE TABLE events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    event_type_id INTEGER NOT NULL,
+    created_by_user_id INTEGER NOT NULL, -- Trainer who created the event
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    location TEXT,
+    address TEXT,
+    max_participants INTEGER,
+    registration_deadline DATETIME,
+    fee_amount REAL DEFAULT 0,
+    fee_currency TEXT DEFAULT 'USD',
+    status TEXT DEFAULT 'upcoming' CHECK (status IN ('draft', 'upcoming', 'ongoing', 'completed', 'cancelled')),
+    is_public BOOLEAN DEFAULT FALSE, -- Public events visible to all athletes
+    requires_approval BOOLEAN DEFAULT FALSE, -- Athletes need approval to join
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_type_id) REFERENCES event_types (id),
+    FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Event participants (athletes assigned to events)
+CREATE TABLE event_participants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    athlete_id INTEGER NOT NULL,
+    assigned_by_user_id INTEGER NOT NULL, -- Trainer who assigned the athlete
+    status TEXT DEFAULT 'registered' CHECK (status IN ('invited', 'registered', 'confirmed', 'declined', 'attended', 'no_show', 'withdrawn')),
+    registration_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    response_date DATETIME,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by_user_id) REFERENCES users (id) ON DELETE CASCADE,
+    UNIQUE(event_id, athlete_id) -- Prevent duplicate assignments
+);
+
+-- Event reminders/notifications
+CREATE TABLE event_reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL, -- Who will receive the reminder
+    reminder_time DATETIME NOT NULL, -- When to send the reminder
+    message TEXT,
+    is_sent BOOLEAN DEFAULT FALSE,
+    sent_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Event results/performances (for competitions and tournaments)
+CREATE TABLE event_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    athlete_id INTEGER NOT NULL,
+    test_id INTEGER, -- Optional: link to fitness test if this is a competition
+    result_value REAL,
+    result_text TEXT,
+    rank_position INTEGER,
+    score REAL,
+    notes TEXT,
+    recorded_by_user_id INTEGER NOT NULL, -- Who recorded the result
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (test_id) REFERENCES tests (id),
+    FOREIGN KEY (recorded_by_user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- =============================================
 -- SAMPLE EXERCISES FOR WORKOUT SYSTEM
 -- =============================================
 
@@ -349,6 +467,19 @@ INSERT OR IGNORE INTO exercises (name, muscle_group) VALUES
 ('Russian Twists', 'core'),
 ('Leg Raises', 'core'),
 ('Mountain Climbers', 'core');
+
+-- =============================================
+-- SAMPLE EVENT TYPES
+-- =============================================
+
+INSERT OR IGNORE INTO event_types (id, name, description, color, icon, is_system) VALUES
+(1, 'Tournament', 'Competitive tournaments and championships', '#f59e0b', 'trophy', TRUE),
+(2, 'Competition', 'Individual competitions and meets', '#ef4444', 'flag', TRUE),
+(3, 'Training Camp', 'Intensive training sessions', '#10b981', 'calendar', TRUE),
+(4, 'Workshop', 'Educational workshops and seminars', '#3b82f6', 'book-open', TRUE),
+(5, 'Assessment', 'Performance assessments and evaluations', '#8b5cf6', 'clipboard', TRUE),
+(6, 'Meeting', 'Team meetings and briefings', '#6b7280', 'users', TRUE),
+(7, 'Recovery Session', 'Recovery and rehabilitation sessions', '#06b6d4', 'heart', TRUE);
 
 -- =============================================
 -- VIEWS FOR COMMON QUERIES
