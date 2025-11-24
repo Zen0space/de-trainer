@@ -10,7 +10,7 @@ import {
   getWorkoutTemplateById,
   createWorkoutTemplate,
   updateWorkoutTemplate
-} from '../../lib/offline-api';
+} from '../../lib/api';
 import { ExerciseLibraryModal } from '../../components/workout/ExerciseLibraryModal';
 import { ExerciseConfigModal } from '../../components/workout/ExerciseConfigModal';
 import { WorkoutAssignmentModal } from '../../components/workout/WorkoutAssignmentModal';

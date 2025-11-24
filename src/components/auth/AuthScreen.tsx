@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, KeyboardAvoidingView, Platform, Alert, Text, useWindowDimensions, Pressable, ScrollView } from 'react-native';
+import { View, KeyboardAvoidingView, Alert, Text, useWindowDimensions, Pressable, ScrollView } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { RegisterTrainerData, RegisterAthleteData } from '../../types/auth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Dropdown } from '../ui/Dropdown';
 import { TabView } from '../ui/TabView';
-import { cn } from '../../lib/utils';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 import { tursoDbHelpers } from '../../lib/turso-database';
@@ -50,10 +49,7 @@ export function AuthScreen() {
   const containerPadding = isSmallScreen ? 16 : isTablet ? 32 : 20;
   const titleFontSize = isSmallScreen ? 24 : isTablet ? 32 : 28;
   const subtitleFontSize = isSmallScreen ? 14 : isTablet ? 16 : 15;
-  const inputPadding = isSmallScreen ? 12 : 14;
   const inputFontSize = 16; // Standard 16sp for all screen sizes
-  const buttonPadding = isSmallScreen ? 12 : 14;
-  const buttonFontSize = isSmallScreen ? 14 : 16;
   const spacing = isSmallScreen ? 10 : isTablet ? 16 : 12; // Reduced spacing
   const headerSpacing = isSmallScreen ? 24 : isTablet ? 40 : 32; // Reduced header spacing
   const containerWidth = isTablet ? '60%' : '100%';
@@ -275,11 +271,14 @@ export function AuthScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       {...keyboardAvoidingViewProps}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
-      <ScrollView 
+      {/* Modern gradient background */}
+      <View className="absolute inset-0 bg-gradient-to-b from-blue-50 via-white to-purple-50" />
+
+      <ScrollView
         ref={scrollViewRef}
         {...scrollViewProps}
         contentContainerStyle={{
@@ -289,47 +288,54 @@ export function AuthScreen() {
         }}
       >
         <View style={{ maxWidth: maxContainerWidth, width: containerWidth }} className="self-center">
-          {/* Header */}
+          {/* Modern Header with enhanced styling */}
           <View style={{ marginBottom: headerSpacing }} className="items-center">
-            <Text 
+            {/* Logo/Icon placeholder - could be replaced with actual logo */}
+            <View className="w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center shadow-lg">
+              <Text className="text-white text-2xl font-bold">JA</Text>
+            </View>
+
+            <Text
               style={{ fontSize: titleFontSize, marginBottom: spacing }}
-              className="font-bold text-gray-800 text-center"
+              className="font-bold text-gray-900 text-center"
             >
-              {authMode === 'login' ? 'Hello Again!' : 'Welcome!'}
+              {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
             </Text>
-            <Text 
-              style={{ 
-                fontSize: subtitleFontSize, 
+            <Text
+              style={{
+                fontSize: subtitleFontSize,
                 lineHeight: subtitleFontSize * 1.5,
                 paddingHorizontal: isSmallScreen ? 8 : 0
               }}
-              className="text-secondary text-center"
+              className="text-gray-600 text-center font-medium"
             >
-              {authMode === 'login' 
-                ? "Welcome back, You've been missed!" 
-                : 'Create your Jejak Atlet account'}
+              {authMode === 'login'
+                ? "Sign in to continue your fitness journey"
+                : 'Join Jejak Atlet and start tracking progress'}
             </Text>
           </View>
 
-          {/* Role Selection for Register */}
-          {authMode === 'register' && (
-            <View style={{ marginBottom: spacing * 1.5 }}>
-              <Text 
-                style={{ fontSize: inputFontSize, marginBottom: spacing }}
-                className="font-semibold text-gray-700 text-center"
-              >
-                I am a
-              </Text>
-              <TabView
-                tabs={roleTabs}
-                activeTab={selectedRole}
-                onTabChange={(tabKey) => handleRoleSelect(tabKey as UserRole)}
-              />
-            </View>
-          )}
+          {/* Modern Card Container for form */}
+          <View className="bg-white rounded-3xl shadow-xl p-6 mb-6">
+            {/* Role Selection for Register */}
+            {authMode === 'register' && (
+              <View style={{ marginBottom: spacing * 1.5 }}>
+                <Text
+                  style={{ fontSize: inputFontSize, marginBottom: spacing }}
+                  className="font-semibold text-gray-700 text-center"
+                >
+                  I am a
+                </Text>
+                <TabView
+                  tabs={roleTabs}
+                  activeTab={selectedRole}
+                  onTabChange={(tabKey) => handleRoleSelect(tabKey as UserRole)}
+                />
+              </View>
+            )}
 
-          {/* Form Fields */}
-          <View style={{ gap: spacing, marginBottom: spacing * 2 }}>
+            {/* Form Fields */}
+            <View style={{ gap: spacing, marginBottom: spacing * 2 }}>
             {authMode === 'register' && (
               <Input
                 placeholder="Full Name"
@@ -440,38 +446,39 @@ export function AuthScreen() {
                 )}
               </>
             )}
-          </View>
-
-          {/* Forgot Password */}
-          {authMode === 'login' && (
-            <View style={{ marginBottom: spacing }} className="items-end">
-              <Pressable onPress={() => {/* TODO: Implement forgot password */}}>
-                <Text className="text-primary text-sm font-medium">
-                  Forgot Password?
-                </Text>
-              </Pressable>
             </View>
-          )}
 
-          {/* Sign In Button */}
-          <View style={{ marginBottom: spacing * 2 }}>
-            <Button
-              title={isLoading ? 'Loading...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
-              onPress={authMode === 'login' ? handleLogin : handleRegister}
-              disabled={isLoading}
-              variant="primary"
-              size="medium"
-            />
+            {/* Forgot Password */}
+            {authMode === 'login' && (
+              <View style={{ marginBottom: spacing }} className="items-end">
+                <Pressable onPress={() => {/* TODO: Implement forgot password */}}>
+                  <Text className="text-blue-600 text-sm font-medium">
+                    Forgot Password?
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Modern Sign In Button with gradient effect */}
+            <View style={{ marginBottom: spacing * 2 }}>
+              <Button
+                title={isLoading ? 'Loading...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
+                onPress={authMode === 'login' ? handleLogin : handleRegister}
+                disabled={isLoading}
+                variant="primary"
+                size="medium"
+              />
+            </View>
           </View>
 
-          {/* Switch Auth Mode */}
-          <View className="items-center">
-            <Text style={{ fontSize: isSmallScreen ? 12 : 14 }} className="text-secondary">
+          {/* Modern Switch Auth Mode */}
+          <View className="items-center mt-4">
+            <Text style={{ fontSize: isSmallScreen ? 12 : 14 }} className="text-gray-600">
               {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <Pressable onPress={switchAuthMode}>
-                <Text 
+                <Text
                   style={{ fontSize: isSmallScreen ? 12 : 14 }}
-                  className="text-primary font-semibold"
+                  className="text-blue-600 font-semibold"
                 >
                   {authMode === 'login' ? 'Register Now' : 'Sign In'}
                 </Text>

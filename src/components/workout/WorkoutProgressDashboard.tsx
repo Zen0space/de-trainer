@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { getTrainerWorkoutAssignments, rescheduleWorkoutAssignment, cancelWorkoutAssignment } from '../../lib/offline-api';
+import { getTrainerWorkoutAssignments, rescheduleWorkoutAssignment, cancelWorkoutAssignment } from '../../lib/api';
 import { formatTimeAgo } from '../../lib/date-utils';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useToast } from '../../contexts/ToastContext';

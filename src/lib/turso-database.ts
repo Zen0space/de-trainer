@@ -203,4 +203,12 @@ export async function initializeTursoConnection(): Promise<void> {
   if (!isConnected) {
     throw new Error('Failed to connect to Turso database');
   }
+  
+  // Enable foreign key constraints to ensure CASCADE deletes work
+  try {
+    await executeSql('PRAGMA foreign_keys = ON');
+    console.log('✅ Foreign key constraints enabled');
+  } catch (error) {
+    console.warn('⚠️ Could not enable foreign keys:', error);
+  }
 }

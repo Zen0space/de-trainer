@@ -7,14 +7,18 @@ interface KeyboardAwareProps {
 
 export function useKeyboardAware({ containerPadding = 24 }: KeyboardAwareProps = {}) {
   const { height } = useWindowDimensions();
-  
+
   // Keyboard state
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  
-  // Calculate precise scroll area
-  const availableHeight = isKeyboardVisible ? height - keyboardHeight : height;
-  const maxScrollHeight = availableHeight - containerPadding * 2;
+
+  // Calculate precise scroll area for modal (accounting for header and safe areas)
+  const modalHeaderHeight = 80; // Approximate header height
+  const safeAreaBottom = 34; // Approximate safe area bottom
+  const availableHeight = isKeyboardVisible
+    ? height - keyboardHeight - modalHeaderHeight - safeAreaBottom
+    : height - modalHeaderHeight - safeAreaBottom;
+  const maxScrollHeight = Math.max(200, availableHeight - containerPadding * 2); // Minimum 200px
 
   // Keyboard event listeners
   useEffect(() => {
@@ -57,13 +61,12 @@ export function useKeyboardAware({ containerPadding = 24 }: KeyboardAwareProps =
     
     // ScrollView props
     scrollViewProps: {
-      style: { 
-        flex: 1,
-        maxHeight: maxScrollHeight 
+      style: {
+        maxHeight: maxScrollHeight
       },
-      contentContainerStyle: { 
+      contentContainerStyle: {
         padding: containerPadding,
-        paddingBottom: containerPadding + (isKeyboardVisible ? 20 : 100)
+        paddingBottom: containerPadding + (isKeyboardVisible ? keyboardHeight + 20 : 100)
       },
       showsVerticalScrollIndicator: false,
       keyboardShouldPersistTaps: 'handled' as const,

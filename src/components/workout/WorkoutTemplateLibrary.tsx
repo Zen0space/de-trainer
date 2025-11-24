@@ -10,7 +10,7 @@ import {
   Alert
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { getWorkoutTemplates, deleteWorkoutTemplate } from '../../lib/offline-api';
+import { getWorkoutTemplates, deleteWorkoutTemplate } from '../../lib/api';
 import { Card } from '../ui/Card';
 import { useToast } from '../../contexts/ToastContext';
 

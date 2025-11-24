@@ -13,7 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { createWorkoutAssignment } from '../../lib/offline-api';
+import { createWorkoutAssignment } from '../../lib/api';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { Button } from '../ui/Button';
 import { useToast } from '../../contexts/ToastContext';

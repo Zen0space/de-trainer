@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, useWindowDimensions, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSession } from '../../contexts/AuthContext';
-import { clearLocalDatabase, getSyncMetadata } from '../../lib/local-database';
+
 import { formatTimeAgoShort } from '../../lib/date-utils';
 import * as SecureStore from 'expo-secure-store';
 
@@ -31,7 +31,7 @@ export function PrivacySecurityScreen({ onBack }: PrivacySecurityScreenProps) {
   const [cookiesEnabled, setCookiesEnabled] = useState(true);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [syncMetadata, setSyncMetadata] = useState<any>(null);
+
   
   // Responsive design
   const isSmallScreen = width < 380;
@@ -75,9 +75,7 @@ export function PrivacySecurityScreen({ onBack }: PrivacySecurityScreenProps) {
       ];
       setSessions(mockSessions);
 
-      // Load sync metadata
-      const metadata = await getSyncMetadata();
-      setSyncMetadata(metadata);
+
 
       // Load settings from SecureStore
       const cookies = await SecureStore.getItemAsync('cookies_enabled');
@@ -156,28 +154,7 @@ export function PrivacySecurityScreen({ onBack }: PrivacySecurityScreenProps) {
     );
   };
 
-  const handleClearCache = () => {
-    Alert.alert(
-      'Clear Cache',
-      'This will delete all local data. You will need to sync again. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear Cache',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await clearLocalDatabase();
-              Alert.alert('Success', 'Cache cleared. Please sync to restore data.');
-              loadSessionsAndSettings();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear cache');
-            }
-          },
-        },
-      ]
-    );
-  };
+
 
   const toggleCookies = async (value: boolean) => {
     setCookiesEnabled(value);
@@ -571,85 +548,7 @@ export function PrivacySecurityScreen({ onBack }: PrivacySecurityScreenProps) {
                   </View>
                 </Section>
 
-                {/* Data Management */}
-                <Section icon="database" title="Data Management">
-                  {syncMetadata && (
-                    <View style={{
-                      backgroundColor: '#f9fafb',
-                      borderRadius: 8,
-                      padding: 12,
-                      marginBottom: 12
-                    }}>
-                      <Text style={{
-                        fontSize: fontSize - 1,
-                        fontWeight: '600',
-                        color: '#1f2937',
-                        marginBottom: 8
-                      }}>
-                        Local Cache Status
-                      </Text>
-                      
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>
-                          Last Sync:
-                        </Text>
-                        <Text style={{ fontSize: fontSize - 2, color: '#1f2937', fontWeight: '500' }}>
-                          {syncMetadata.last_sync ? formatTimeAgoShort(syncMetadata.last_sync) : 'Never'}
-                        </Text>
-                      </View>
-                      
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: fontSize - 2, color: '#6b7280' }}>
-                          Records Cached:
-                        </Text>
-                        <Text style={{ fontSize: fontSize - 2, color: '#1f2937', fontWeight: '500' }}>
-                          {syncMetadata.total_records || 0}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                  
-                  <Pressable
-                    onPress={handleClearCache}
-                    style={{
-                      backgroundColor: '#fef2f2',
-                      borderRadius: 8,
-                      padding: 12,
-                      alignItems: 'center',
-                      borderWidth: 1,
-                      borderColor: '#fecaca'
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Feather name="trash-2" size={16} color="#dc2626" />
-                      <Text style={{
-                        fontSize: fontSize,
-                        fontWeight: '600',
-                        color: '#dc2626',
-                        marginLeft: 8
-                      }}>
-                        Clear Local Cache
-                      </Text>
-                    </View>
-                  </Pressable>
-                  
-                  <View style={{
-                    backgroundColor: '#fef3c7',
-                    borderRadius: 8,
-                    padding: 12,
-                    marginTop: 12,
-                    borderLeftWidth: 4,
-                    borderLeftColor: '#f59e0b'
-                  }}>
-                    <Text style={{
-                      fontSize: fontSize - 1,
-                      color: '#92400e',
-                      lineHeight: (fontSize - 1) * 1.5
-                    }}>
-                      Clearing cache will delete all local data. You'll need to sync again to restore your data.
-                    </Text>
-                  </View>
-                </Section>
+
 
                 {/* Account Actions */}
                 <Section icon="alert-triangle" title="Account Actions">

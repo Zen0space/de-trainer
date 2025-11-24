@@ -7,10 +7,11 @@ import { ManageAthletesScreen } from './ManageAthletesScreen';
 import { AthleteDetailsScreen } from './AthleteDetailsScreen';
 import { WorkoutBuilderScreen } from './WorkoutBuilderScreen';
 import { WorkoutProgressDashboard } from '../../components/workout/WorkoutProgressDashboard';
+import { TrainerScheduleScreen } from './TrainerScheduleScreen';
 import { OfflineIndicator } from '../../components/ui/OfflineIndicator';
 import { tursoDbHelpers } from '../../lib/turso-database';
 import { formatTimeAgo } from '../../lib/date-utils';
-import { getTrainerWorkoutAssignments } from '../../lib/offline-api';
+import { getTrainerWorkoutAssignments } from '../../lib/api';
 
 export function TrainerHomeScreen() {
   const { user, logout } = useSession();
@@ -21,6 +22,7 @@ export function TrainerHomeScreen() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
   const [showWorkoutProgress, setShowWorkoutProgress] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   
   // Dashboard data state
   const [stats, setStats] = useState({
@@ -200,7 +202,7 @@ export function TrainerHomeScreen() {
     { id: 1, title: 'Manage Athletes', icon: 'users', color: '#3b82f6' },
     { id: 2, title: 'Create Workout', icon: 'plus-circle', color: '#10b981' },
     { id: 3, title: 'Workout Progress', icon: 'activity', color: '#8b5cf6' },
-    { id: 4, title: 'View Analytics', icon: 'bar-chart-2', color: '#f59e0b' },
+    { id: 4, title: 'Schedule', icon: 'calendar', color: '#f59e0b' },
   ];
 
   const handleTabPress = (tab: string) => {
@@ -211,6 +213,7 @@ export function TrainerHomeScreen() {
     setSelectedAthleteId(null);
     setShowWorkoutBuilder(false);
     setShowWorkoutProgress(false);
+    setShowSchedule(false);
   };
 
   // Handle pull-to-refresh
@@ -265,9 +268,18 @@ export function TrainerHomeScreen() {
     // Show ManageAthletesScreen if requested
     if (showManageAthletes) {
       return (
-        <ManageAthletesScreen 
+        <ManageAthletesScreen
           onBack={() => setShowManageAthletes(false)}
           onNavigateToAthleteProfile={handleNavigateToAthleteProfile}
+        />
+      );
+    }
+
+    // Show ScheduleScreen if requested
+    if (showSchedule) {
+      return (
+        <TrainerScheduleScreen
+          onBack={() => setShowSchedule(false)}
         />
       );
     }
@@ -591,8 +603,8 @@ export function TrainerHomeScreen() {
                   onPress={() => {
                     if (action.title === 'Manage Athletes') {
                       setShowManageAthletes(true);
-                    } else if (action.title === 'View Analytics') {
-                      setActiveTab('reports');
+                    } else if (action.title === 'Schedule') {
+                      setShowSchedule(true);
                     } else if (action.title === 'Create Workout') {
                       setShowWorkoutBuilder(true);
                     } else if (action.title === 'Workout Progress') {

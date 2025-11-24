@@ -6,8 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Dropdown } from '../../components/ui/Dropdown';
 import { tursoDbHelpers } from '../../lib/turso-database';
-import { localDbHelpers } from '../../lib/local-database';
-import { createTestResult } from '../../lib/offline-api';
+import { createTestResult } from '../../lib/api';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 
 // Types for the training log functionality
@@ -183,8 +182,8 @@ export function TrainingLogScreen() {
     setIsLoading(true);
     try {
       // Check if this is a best record for this athlete and test
-      // Use local database for offline-first approach
-      const existingResults = await localDbHelpers.all(`
+      // Check if this is a best record for this athlete and test
+      const existingResults = await tursoDbHelpers.all(`
         SELECT result_value 
         FROM test_results 
         WHERE athlete_id = ? AND test_id = ? 
@@ -209,8 +208,7 @@ export function TrainingLogScreen() {
         }
       }
 
-      // Save using offline-first API
-      // This saves to local database immediately and syncs in background
+      // Save using API
       const result = await createTestResult({
         athlete_id: logEntry.athlete_id,
         test_id: logEntry.test_id,
@@ -225,7 +223,7 @@ export function TrainingLogScreen() {
       if (result.success) {
         Alert.alert(
           'Success', 
-          `Fitness log entry saved!${isBestRecord ? ' 🏆 New personal best!' : ''}\n\n📱 Saved locally and will sync to cloud automatically.`, 
+          `Fitness log entry saved!${isBestRecord ? ' 🏆 New personal best!' : ''}`, 
           [
             {
               text: 'OK',

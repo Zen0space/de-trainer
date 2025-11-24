@@ -10,14 +10,13 @@ import { AuthScreen } from './src/components/auth/AuthScreen';
 import { TrainerHomeScreen } from './src/screens/trainer/TrainerHomeScreen';
 import { AthleteHomeScreen } from './src/screens/athlete/AthleteHomeScreen';
 import { initializeTursoConnection } from './src/lib/turso-database';
-import { initializeLocalDatabase } from './src/lib/local-database';
-import { setToastCallback, clearToastCallback } from './src/lib/offline-api';
+import { setToastCallback, clearToastCallback } from './src/lib/api';
 
 function MainContent() {
   const { user, logout, isLoading } = useSession();
   const { showToast } = useToast();
   
-  // Set up toast callback for offline-api
+  // Set up toast callback for api
   useEffect(() => {
     setToastCallback(showToast);
     return () => clearToastCallback();
@@ -238,16 +237,15 @@ export default function App() {
   useEffect(() => {
     const initializeDatabase = async () => {
       try {
-        // Initialize local SQLite database first (offline-first)
-        await initializeLocalDatabase();
-        
-        // Then initialize Turso connection for sync
+        // Initialize Turso connection only
+        console.log('🔌 Initializing Turso database connection...');
         await initializeTursoConnection();
-        
+        console.log('✅ Turso database initialized successfully');
+
         setDbInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize databases:', error);
-        setDbError(error instanceof Error ? error.message : 'Database initialization failed');
+        console.error('❌ Failed to initialize Turso database:', error);
+        setDbError(error instanceof Error ? error.message : 'Turso database initialization failed');
       }
     };
 

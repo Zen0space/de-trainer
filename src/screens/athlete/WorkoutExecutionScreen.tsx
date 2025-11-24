@@ -8,8 +8,8 @@ import {
   createSessionProgress,
   completeWorkoutSession,
   updateWorkoutAssignmentStatus
-} from '../../lib/offline-api';
-import { localDbHelpers } from '../../lib/local-database';
+} from '../../lib/api';
+import { tursoDbHelpers } from '../../lib/turso-database';
 import { RestTimer } from '../../components/workout/RestTimer';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -132,7 +132,7 @@ export function WorkoutExecutionScreen({
 
     try {
       // Get assignment
-      const assignmentData = await localDbHelpers.get(`
+      const assignmentData = await tursoDbHelpers.get(`
         SELECT * FROM workout_assignments
         WHERE id = ? AND athlete_id = ?
       `, [workoutAssignmentId, user.id]);

@@ -5,8 +5,8 @@ import { useSession } from '../../contexts/AuthContext';
 import { 
   getWorkoutTemplateById, 
   updateWorkoutAssignmentStatus
-} from '../../lib/offline-api';
-import { localDbHelpers } from '../../lib/local-database';
+} from '../../lib/api';
+import { tursoDbHelpers } from '../../lib/turso-database';
 import { useToast } from '../../contexts/ToastContext';
 
 interface WorkoutExercise {
@@ -82,7 +82,7 @@ export function WorkoutDetailScreen({
 
     try {
       // Get assignment details
-      const assignmentData = await localDbHelpers.get(`
+      const assignmentData = await tursoDbHelpers.get(`
         SELECT 
           wa.*,
           u.full_name as trainer_name

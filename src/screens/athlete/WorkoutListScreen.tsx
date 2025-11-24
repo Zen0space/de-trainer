@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable, useWindowDimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSession } from '../../contexts/AuthContext';
-import { getWorkoutAssignments } from '../../lib/offline-api';
+import { getWorkoutAssignments } from '../../lib/api';
 import { TabView } from '../../components/ui/TabView';
 
 interface WorkoutAssignment {

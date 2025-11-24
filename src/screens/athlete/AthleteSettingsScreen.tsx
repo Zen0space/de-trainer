@@ -8,9 +8,7 @@ import { ChangelogModal } from '../../components/ui/ChangelogModal';
 import { PrivacyPolicyModal } from '../../components/ui/PrivacyPolicyModal';
 import { PrivacySecurityScreen } from '../shared/PrivacySecurityScreen';
 import { TermsOfServiceScreen } from '../shared/TermsOfServiceScreen';
-import { SyncDataCard } from '../../components/ui/SyncDataCard';
 import { formatTimeAgoShort } from '../../lib/date-utils';
-import { clearLocalDatabase } from '../../lib/local-database';
 
 interface Notification {
   id: number;
@@ -178,30 +176,7 @@ export function AthleteSettingsScreen() {
     );
   };
 
-  const handleClearCache = () => {
-    Alert.alert(
-      'Clear Cache',
-      'This will delete all local data and you will need to sync again. Are you sure?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Clear Cache',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await clearLocalDatabase();
-              Alert.alert('Success', 'Local cache cleared successfully. Please sync to restore your data.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear cache. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
+
 
   const SettingItem = ({ 
     icon, 
@@ -637,21 +612,12 @@ export function AthleteSettingsScreen() {
           {/* Data & Progress Section */}
           <SectionHeader title="Data & Progress" />
           
-          {/* Sync Data Card */}
-          <SyncDataCard />
-          
           <View style={{
             backgroundColor: 'white',
             borderRadius: 12,
             marginBottom: spacing,
             overflow: 'hidden',
           }}>
-            <SettingItem
-              icon="trash-2"
-              title="Clear Cache"
-              subtitle="Clear local database cache"
-              onPress={handleClearCache}
-            />
             <SettingItem
               icon="heart"
               title="Health Integration"

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getExercises } from '../../lib/offline-api';
+import { getExercises } from '../../lib/api';
 
 interface Exercise {
   id: number;

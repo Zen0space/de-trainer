@@ -1,6 +1,6 @@
 {
   "name": "jejak-atlet",
-  "version": "0.2.8",
+  "version": "0.2.10",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -26,6 +26,7 @@
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "expo": "~54.0.25",
     "expo-crypto": "~15.0.7",
     "expo-linear-gradient": "~15.0.7",
