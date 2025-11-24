@@ -147,40 +147,11 @@ INSERT OR IGNORE INTO event_types (id, name, description, color, icon, is_system
 (7, 'Recovery Session', 'Recovery and rehabilitation sessions', '#06b6d4', 'heart', TRUE);
 
 -- =============================================
--- VIEWS FOR COMMON QUERIES
+-- VIEWS FOR COMMON QUERIES (No Parameters)
 -- =============================================
 
--- View for athlete calendar events
-CREATE VIEW athlete_calendar_events AS
-SELECT
-    e.id,
-    e.title,
-    e.description,
-    e.start_date,
-    e.end_date,
-    e.location,
-    e.address,
-    e.status,
-    et.name as event_type_name,
-    et.color as event_type_color,
-    et.icon as event_type_icon,
-    ep.status as participation_status,
-    ep.registration_date,
-    u.full_name as created_by_name,
-    CASE
-        WHEN e.created_by_user_id = ep.athlete_id THEN 'owner'
-        ELSE 'participant'
-    END as role_in_event
-FROM events e
-JOIN event_types et ON e.event_type_id = et.id
-JOIN event_participants ep ON e.id = ep.event_id
-JOIN users u ON e.created_by_user_id = u.id
-WHERE ep.athlete_id = ? -- Parameter: athlete_id
-AND e.status IN ('upcoming', 'ongoing', 'completed')
-ORDER BY e.start_date;
-
--- View for trainer created events
-CREATE VIEW trainer_created_events AS
+-- View for all calendar events with full details
+CREATE VIEW calendar_events_details AS
 SELECT
     e.id,
     e.title,
@@ -193,39 +164,95 @@ SELECT
     e.max_participants,
     e.registration_deadline,
     e.is_public,
+    e.requires_approval,
+    e.created_by_user_id,
+    e.created_at,
+    e.updated_at,
     et.name as event_type_name,
     et.color as event_type_color,
     et.icon as event_type_icon,
-    COUNT(ep.id) as current_participants,
-    COUNT(CASE WHEN ep.status = 'confirmed' THEN 1 END) as confirmed_participants
+    u.full_name as created_by_name,
+    u.email as created_by_email
 FROM events e
 JOIN event_types et ON e.event_type_id = et.id
-LEFT JOIN event_participants ep ON e.id = ep.event_id
-WHERE e.created_by_user_id = ? -- Parameter: trainer_id
-GROUP BY e.id, e.title, e.description, e.start_date, e.end_date, e.location,
-         e.address, e.status, e.max_participants, e.registration_deadline,
-         e.is_public, et.name, et.color, et.icon
-ORDER BY e.start_date;
+JOIN users u ON e.created_by_user_id = u.id;
+
+-- View for all event participants with full details
+CREATE VIEW event_participants_details AS
+SELECT
+    ep.id as participant_id,
+    ep.event_id,
+    ep.athlete_id,
+    ep.assigned_by_user_id,
+    ep.status as participation_status,
+    ep.registration_date,
+    ep.response_date,
+    ep.notes as participant_notes,
+    ep.created_at as participant_created_at,
+    ep.updated_at as participant_updated_at,
+    u.full_name as athlete_name,
+    u.email as athlete_email,
+    e.title as event_title,
+    e.start_date as event_start_date,
+    e.end_date as event_end_date,
+    et.name as event_type_name,
+    et.color as event_type_color,
+    et.icon as event_type_icon,
+    creator.full_name as assigned_by_name,
+    CASE
+        WHEN e.created_by_user_id = ep.athlete_id THEN 'owner'
+        ELSE 'participant'
+    END as role_in_event
+FROM event_participants ep
+JOIN users u ON ep.athlete_id = u.id
+JOIN events e ON ep.event_id = e.id
+JOIN event_types et ON e.event_type_id = et.id
+JOIN users creator ON ep.assigned_by_user_id = creator.id;
 
 -- View for upcoming events (for notifications)
-CREATE VIEW upcoming_events AS
+CREATE VIEW upcoming_events_details AS
 SELECT
     e.id,
     e.title,
     e.start_date,
+    e.end_date,
     e.location,
-    u.full_name as athlete_name,
-    u.email as athlete_email,
+    e.address,
+    e.status,
+    e.registration_deadline,
     et.name as event_type_name,
-    ep.notes as participant_notes
+    et.color as event_type_color,
+    et.icon as event_type_icon,
+    creator.full_name as created_by_name,
+    creator.email as created_by_email
 FROM events e
-JOIN event_participants ep ON e.id = ep.event_id
-JOIN users u ON ep.athlete_id = u.id
 JOIN event_types et ON e.event_type_id = et.id
+JOIN users creator ON e.created_by_user_id = creator.id
 WHERE e.status = 'upcoming'
 AND e.start_date BETWEEN datetime('now') AND datetime('now', '+7 days')
-AND ep.status IN ('registered', 'confirmed')
 ORDER BY e.start_date;
+
+-- View for event participants with counts (for trainer dashboard)
+CREATE VIEW events_participant_counts AS
+SELECT
+    e.id as event_id,
+    e.title,
+    e.start_date,
+    e.end_date,
+    e.status,
+    e.created_by_user_id,
+    et.name as event_type_name,
+    et.color as event_type_color,
+    et.icon as event_type_icon,
+    COUNT(ep.id) as total_participants,
+    COUNT(CASE WHEN ep.status = 'confirmed' THEN 1 END) as confirmed_participants,
+    COUNT(CASE WHEN ep.status = 'registered' THEN 1 END) as registered_participants,
+    COUNT(CASE WHEN ep.status = 'attended' THEN 1 END) as attended_participants
+FROM events e
+JOIN event_types et ON e.event_type_id = et.id
+LEFT JOIN event_participants ep ON e.id = ep.event_id
+GROUP BY e.id, e.title, e.start_date, e.end_date, e.status, e.created_by_user_id,
+         et.name, et.color, et.icon;
 
 -- =============================================
 -- TRIGGERS FOR DATA INTEGRITY

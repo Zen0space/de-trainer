@@ -24,7 +24,8 @@ CREATE TABLE users (
     full_name TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('trainer', 'athlete')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_verified BOOLEAN DEFAULT FALSE
+    is_verified BOOLEAN DEFAULT FALSE,
+    username TEXT
 );
 
 -- Extended trainer profiles
@@ -64,8 +65,8 @@ CREATE TABLE tests (
     name TEXT NOT NULL,
     unit TEXT,
     description TEXT,
-    improvement_direction TEXT DEFAULT 'higher' CHECK (improvement_direction IN ('higher', 'lower')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    improvement_direction TEXT DEFAULT 'higher' CHECK (improvement_direction IN ('higher', 'lower')),
     FOREIGN KEY (component_id) REFERENCES fitness_components (id) ON DELETE CASCADE,
     UNIQUE(component_id, name)
 );
@@ -106,6 +107,22 @@ CREATE TABLE test_results (
     FOREIGN KEY (test_id) REFERENCES tests (id) ON DELETE CASCADE
 );
 
+-- Athlete body metrics tracking
+CREATE TABLE athlete_body_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id INTEGER NOT NULL,
+    measurement_date TEXT NOT NULL,
+    weight REAL,
+    height REAL,
+    muscle_mass REAL,
+    body_fat_percentage REAL,
+    bmi REAL,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
 -- User notifications
 CREATE TABLE notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,6 +149,8 @@ CREATE TABLE workout_templates (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    synced_at DATETIME,
+    is_dirty BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
@@ -140,8 +159,10 @@ CREATE TABLE exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     muscle_group TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    synced_at DATETIME,
+    is_dirty BOOLEAN DEFAULT FALSE
 );
 
 -- Exercises within a workout template (MVP - simplified)
@@ -155,6 +176,8 @@ CREATE TABLE workout_exercises (
     rest_time INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    synced_at DATETIME,
+    is_dirty BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
 );
@@ -171,6 +194,8 @@ CREATE TABLE workout_assignments (
     completed_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    synced_at DATETIME,
+    is_dirty BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (workout_template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
     FOREIGN KEY (athlete_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (trainer_id) REFERENCES users (id) ON DELETE CASCADE
@@ -186,6 +211,8 @@ CREATE TABLE workout_session_progress (
     completed_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    synced_at DATETIME,
+    is_dirty BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (workout_assignment_id) REFERENCES workout_assignments (id) ON DELETE CASCADE,
     FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises (id) ON DELETE CASCADE
 );
@@ -224,6 +251,10 @@ CREATE INDEX idx_test_results_date ON test_results (test_date);
 CREATE INDEX idx_test_results_athlete_test ON test_results (athlete_id, test_id);
 CREATE INDEX idx_test_results_best_record ON test_results (is_best_record) WHERE is_best_record = TRUE;
 CREATE INDEX idx_test_results_created_at ON test_results (created_at);
+
+-- Body metrics indexes
+CREATE INDEX idx_athlete_body_metrics_athlete ON athlete_body_metrics (athlete_id);
+CREATE INDEX idx_athlete_body_metrics_date ON athlete_body_metrics (measurement_date);
 
 -- Notification indexes
 CREATE INDEX idx_notifications_user ON notifications (user_id);
@@ -267,66 +298,6 @@ CREATE INDEX idx_event_reminders_sent ON event_reminders (is_sent);
 CREATE INDEX idx_event_results_event ON event_results (event_id);
 CREATE INDEX idx_event_results_athlete ON event_results (athlete_id);
 CREATE INDEX idx_event_results_rank ON event_results (rank_position);
-
--- =============================================
--- SAMPLE FITNESS COMPONENTS AND TESTS
--- =============================================
--- These are commonly used in fitness assessments
-
-INSERT OR IGNORE INTO fitness_components (id, name, description) VALUES
-(1, 'Cardio Endurance', 'Cardiovascular endurance and aerobic capacity'),
-(2, 'Muscular Strength', 'Maximum force production capability'),
-(3, 'Muscular Endurance', 'Ability to sustain muscle contractions over time'),
-(4, 'Flexibility', 'Range of motion around joints'),
-(5, 'Power', 'Explosive strength and speed combination'),
-(6, 'Speed', 'Ability to move quickly'),
-(7, 'Agility', 'Ability to change direction quickly'),
-(8, 'Balance', 'Ability to maintain equilibrium'),
-(9, 'Body Composition', 'Ratio of fat to lean body mass');
-
-INSERT OR IGNORE INTO tests (component_id, name, unit, description, improvement_direction) VALUES
--- Cardio Endurance Tests
-(1, 'Beep Test', 'level', 'Progressive shuttle run test', 'higher'),
-(1, '2.4km Run', 'minutes', '2.4 kilometer run time test', 'lower'),
-(1, '12 Minute Cooper Test', 'meters', 'Distance covered in 12 minutes', 'higher'),
-(1, 'VO2 Max Test', 'ml/kg/min', 'Maximum oxygen consumption test', 'higher'),
-
--- Muscular Strength Tests
-(2, '1RM Bench Press', 'kg', 'One repetition maximum bench press', 'higher'),
-(2, '1RM Squat', 'kg', 'One repetition maximum squat', 'higher'),
-(2, '1RM Deadlift', 'kg', 'One repetition maximum deadlift', 'higher'),
-(2, 'Handgrip Strength', 'kg', 'Maximum grip strength test', 'higher'),
-
--- Muscular Endurance Tests
-(3, 'Push-ups', 'reps', 'Maximum push-ups in 60 seconds', 'higher'),
-(3, 'Sit-ups', 'reps', 'Maximum sit-ups in 60 seconds', 'higher'),
-(3, 'Plank Hold', 'seconds', 'Maximum plank hold time', 'higher'),
-(3, 'Pull-ups', 'reps', 'Maximum pull-ups without rest', 'higher'),
-
--- Flexibility Tests
-(4, 'Sit and Reach', 'cm', 'Forward flexibility test', 'higher'),
-(4, 'Shoulder Flexibility', 'cm', 'Shoulder range of motion test', 'higher'),
-
--- Power Tests
-(5, 'Vertical Jump', 'cm', 'Maximum vertical jump height', 'higher'),
-(5, 'Standing Long Jump', 'cm', 'Maximum horizontal jump distance', 'higher'),
-(5, 'Medicine Ball Throw', 'meters', '2kg medicine ball throw distance', 'higher'),
-
--- Speed Tests
-(6, '40m Sprint', 'seconds', '40 meter sprint time', 'lower'),
-(6, '100m Sprint', 'seconds', '100 meter sprint time', 'lower'),
-
--- Agility Tests
-(7, 'T-Test', 'seconds', 'T-shaped agility course time', 'lower'),
-(7, '5-10-5 Shuttle', 'seconds', 'Pro agility shuttle run time', 'lower'),
-
--- Balance Tests
-(8, 'Single Leg Stand', 'seconds', 'Single leg balance with eyes closed', 'higher'),
-(8, 'Y-Balance Test', 'cm', 'Dynamic balance reach test', 'higher'),
-
--- Body Composition Tests
-(9, 'Body Fat Percentage', '%', 'Percentage of body fat', 'lower'),
-(9, 'BMI', 'kg/m²', 'Body Mass Index calculation', 'lower');
 
 -- =============================================
 -- CALENDAR EVENT SYSTEM TABLES
@@ -421,234 +392,18 @@ CREATE TABLE event_results (
 );
 
 -- =============================================
--- SAMPLE EXERCISES FOR WORKOUT SYSTEM
--- =============================================
-
-INSERT OR IGNORE INTO exercises (name, muscle_group) VALUES
--- Chest exercises
-('Barbell Bench Press', 'chest'),
-('Dumbbell Bench Press', 'chest'),
-('Push-ups', 'chest'),
-('Incline Dumbbell Press', 'chest'),
-('Cable Chest Fly', 'chest'),
-
--- Back exercises
-('Pull-ups', 'back'),
-('Barbell Rows', 'back'),
-('Lat Pulldown', 'back'),
-('Dumbbell Rows', 'back'),
-('Deadlift', 'back'),
-
--- Legs exercises
-('Barbell Squat', 'legs'),
-('Leg Press', 'legs'),
-('Lunges', 'legs'),
-('Romanian Deadlift', 'legs'),
-('Leg Curl', 'legs'),
-('Calf Raises', 'legs'),
-
--- Shoulders exercises
-('Overhead Press', 'shoulders'),
-('Dumbbell Shoulder Press', 'shoulders'),
-('Lateral Raises', 'shoulders'),
-('Front Raises', 'shoulders'),
-('Face Pulls', 'shoulders'),
-
--- Arms exercises
-('Barbell Curl', 'arms'),
-('Dumbbell Curl', 'arms'),
-('Tricep Dips', 'arms'),
-('Tricep Pushdown', 'arms'),
-('Hammer Curls', 'arms'),
-
--- Core exercises
-('Plank', 'core'),
-('Crunches', 'core'),
-('Russian Twists', 'core'),
-('Leg Raises', 'core'),
-('Mountain Climbers', 'core');
-
--- =============================================
--- SAMPLE EVENT TYPES
--- =============================================
-
-INSERT OR IGNORE INTO event_types (id, name, description, color, icon, is_system) VALUES
-(1, 'Tournament', 'Competitive tournaments and championships', '#f59e0b', 'trophy', TRUE),
-(2, 'Competition', 'Individual competitions and meets', '#ef4444', 'flag', TRUE),
-(3, 'Training Camp', 'Intensive training sessions', '#10b981', 'calendar', TRUE),
-(4, 'Workshop', 'Educational workshops and seminars', '#3b82f6', 'book-open', TRUE),
-(5, 'Assessment', 'Performance assessments and evaluations', '#8b5cf6', 'clipboard', TRUE),
-(6, 'Meeting', 'Team meetings and briefings', '#6b7280', 'users', TRUE),
-(7, 'Recovery Session', 'Recovery and rehabilitation sessions', '#06b6d4', 'heart', TRUE);
-
--- =============================================
--- VIEWS FOR COMMON QUERIES
--- =============================================
-
--- View for trainer dashboard statistics
-CREATE VIEW trainer_dashboard_stats AS
-SELECT 
-    t.user_id as trainer_id,
-    u.full_name as trainer_name,
-    COUNT(DISTINCT e.athlete_id) as total_athletes,
-    COUNT(DISTINCT CASE 
-        WHEN tr.test_date >= date('now', '-7 days') 
-        THEN tr.athlete_id 
-    END) as active_athletes_week,
-    COUNT(tr.id) as total_test_results,
-    COUNT(CASE WHEN tr.is_best_record = TRUE THEN 1 END) as total_personal_records
-FROM users u
-JOIN trainers t ON u.id = t.user_id
-LEFT JOIN enrollments e ON t.user_id = e.trainer_id AND e.status = 'approved'
-LEFT JOIN test_results tr ON e.athlete_id = tr.athlete_id
-WHERE u.role = 'trainer'
-GROUP BY t.user_id, u.full_name;
-
--- View for athlete progress tracking
-CREATE VIEW athlete_progress AS
-SELECT 
-    tr.athlete_id,
-    u.full_name as athlete_name,
-    fc.name as fitness_component,
-    t.name as test_name,
-    t.unit,
-    t.improvement_direction,
-    tr.result_value,
-    tr.test_date,
-    tr.is_best_record,
-    ROW_NUMBER() OVER (
-        PARTITION BY tr.athlete_id, tr.test_id 
-        ORDER BY tr.test_date DESC
-    ) as recent_rank
-FROM test_results tr
-JOIN users u ON tr.athlete_id = u.id
-JOIN tests t ON tr.test_id = t.id
-JOIN fitness_components fc ON t.component_id = fc.id
-ORDER BY tr.athlete_id, tr.test_date DESC;
-
--- =============================================
--- TRIGGERS FOR DATA INTEGRITY
--- =============================================
-
--- Automatically update best record flags when new test results are inserted
-CREATE TRIGGER update_best_records
-AFTER INSERT ON test_results
-FOR EACH ROW
-BEGIN
-    -- Reset all best records for this athlete/test combination
-    UPDATE test_results 
-    SET is_best_record = FALSE 
-    WHERE athlete_id = NEW.athlete_id AND test_id = NEW.test_id;
-    
-    -- Set the best record based on improvement direction
-    UPDATE test_results 
-    SET is_best_record = TRUE 
-    WHERE athlete_id = NEW.athlete_id 
-    AND test_id = NEW.test_id
-    AND id = (
-        SELECT tr.id
-        FROM test_results tr
-        JOIN tests t ON tr.test_id = t.id
-        WHERE tr.athlete_id = NEW.athlete_id 
-        AND tr.test_id = NEW.test_id
-        AND tr.result_value IS NOT NULL
-        ORDER BY 
-            CASE 
-                WHEN t.improvement_direction = 'higher' THEN tr.result_value 
-                ELSE -tr.result_value 
-            END DESC
-        LIMIT 1
-    );
-END;
-
--- =============================================
--- SECURITY AND CONSTRAINTS
--- =============================================
-
--- Ensure users can only have one role-specific profile
-CREATE TRIGGER enforce_single_profile
-BEFORE INSERT ON trainers
-FOR EACH ROW
-WHEN EXISTS (SELECT 1 FROM athletes WHERE user_id = NEW.user_id)
-BEGIN
-    SELECT RAISE(ABORT, 'User already has an athlete profile');
-END;
-
-CREATE TRIGGER enforce_single_profile_athletes
-BEFORE INSERT ON athletes
-FOR EACH ROW
-WHEN EXISTS (SELECT 1 FROM trainers WHERE user_id = NEW.user_id)
-BEGIN
-    SELECT RAISE(ABORT, 'User already has a trainer profile');
-END;
-
--- Ensure enrollment participants have correct roles
-CREATE TRIGGER validate_enrollment_roles
-BEFORE INSERT ON enrollments
-FOR EACH ROW
-BEGIN
-    -- Check that athlete_id is actually an athlete
-    SELECT CASE
-        WHEN NOT EXISTS (
-            SELECT 1 FROM users u 
-            JOIN athletes a ON u.id = a.user_id 
-            WHERE u.id = NEW.athlete_id
-        ) THEN RAISE(ABORT, 'athlete_id must reference a user with athlete role')
-    END;
-    
-    -- Check that trainer_id is actually a trainer
-    SELECT CASE
-        WHEN NOT EXISTS (
-            SELECT 1 FROM users u 
-            JOIN trainers t ON u.id = t.user_id 
-            WHERE u.id = NEW.trainer_id
-        ) THEN RAISE(ABORT, 'trainer_id must reference a user with trainer role')
-    END;
-END;
-
--- =============================================
--- COMMENTS AND DOCUMENTATION
+-- SCHEMA REFERENCE NOTES
 -- =============================================
 
 /*
-DATABASE SCHEMA NOTES:
+This file serves as a reference for the current database structure.
+Contains all tables from the live Turso database including:
+- User management (users, trainers, athletes)
+- Fitness framework (fitness_components, tests, test_results)
+- Relationships (enrollments, notifications)
+- Workout management (workout_templates, exercises, workout_assignments)
+- Body metrics tracking (athlete_body_metrics)
+- Calendar event system (event_types, events, event_participants, event_reminders, event_results)
 
-1. USER MANAGEMENT:
-   - users: Base table for all accounts
-   - trainers/athletes: Extended profiles with role-specific data
-   - Enforced 1:1 relationship between users and their role profile
-
-2. FITNESS FRAMEWORK:
-   - fitness_components: Categories like "Cardio Endurance"
-   - tests: Specific tests within each component
-   - improvement_direction: 'higher' = more is better, 'lower' = less is better
-
-3. RELATIONSHIPS:
-   - enrollments: Many-to-many between trainers and athletes
-   - Status tracking: pending → approved/rejected workflow
-
-4. PERFORMANCE DATA:
-   - test_results: Individual test performances
-   - is_best_record: Automatically maintained by triggers
-   - Supports both numeric (result_value) and text (result_text) results
-
-5. NOTIFICATIONS:
-   - Generic notification system
-   - data field stores JSON for flexible context
-
-6. PERFORMANCE OPTIMIZATIONS:
-   - Comprehensive indexing strategy
-   - Views for common dashboard queries
-   - Triggers for automatic best record maintenance
-
-7. DATA INTEGRITY:
-   - Foreign key constraints with CASCADE deletes
-   - CHECK constraints for enum-like values
-   - Triggers prevent invalid role assignments
-
-USAGE PATTERNS:
-- Trainers manage multiple athletes through enrollments
-- Athletes perform tests and track personal records
-- Dashboard queries use indexed views for performance
-- Notifications keep users informed of system events
+All sync-related fields (synced_at, is_dirty) are included for offline functionality.
 */
