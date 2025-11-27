@@ -7,3 +7,4 @@ export { WorkoutHistoryScreen } from './WorkoutHistoryScreen';
 export { WorkoutListScreen } from './WorkoutListScreen';
 export { WorkoutDetailScreen } from './WorkoutDetailScreen';
 export { WorkoutExecutionScreen } from './WorkoutExecutionScreen';
+export { AthleteScheduleScreen } from './AthleteScheduleScreen';

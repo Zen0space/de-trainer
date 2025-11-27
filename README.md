@@ -148,9 +148,33 @@ eas build --platform android --profile production
 
 ## Building for Production
 
+### Environment Variables
+
+Ensure your Turso database environment variables are configured in `eas.json` for production builds:
+
+```json
+{
+  "build": {
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_TURSO_DATABASE_URL": "libsql://your-database-url",
+        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "your-auth-token"
+      }
+    }
+  }
+}
+```
+
 ### Android
 ```bash
+# Build APK (for testing/distribution)
 expo build:android
+
+# Build AAB (Android App Bundle) for Play Store production
+eas build --platform android --profile production
+
+# Build with custom configuration
+eas build --platform android --profile production --local
 ```
 
 ### iOS

@@ -11,6 +11,7 @@ import { AthleteSettingsScreen } from './AthleteSettingsScreen';
 import { WorkoutListScreen } from './WorkoutListScreen';
 import { WorkoutDetailScreen } from './WorkoutDetailScreen';
 import { WorkoutExecutionScreen } from './WorkoutExecutionScreen';
+import { AthleteScheduleScreen } from './AthleteScheduleScreen';
 import { OfflineIndicator } from '../../components/ui/OfflineIndicator';
 import { tursoDbHelpers } from '../../lib/turso-database';
 
@@ -36,6 +37,7 @@ export function AthleteHomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [executingWorkoutId, setExecutingWorkoutId] = useState<number | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [stats, setStats] = useState<AthleteStats>({
     totalWorkouts: 0,
     recentTestResults: 0,
@@ -172,7 +174,7 @@ export function AthleteHomeScreen() {
     { id: 1, title: 'View Progress', icon: 'trending-up', color: '#3b82f6' },
     { id: 2, title: 'My Trainer', icon: 'user-check', color: '#10b981' },
     { id: 3, title: 'Test History', icon: 'activity', color: '#f59e0b' },
-    { id: 4, title: 'Goals', icon: 'target', color: '#8b5cf6' },
+    { id: 4, title: 'Schedule', icon: 'calendar', color: '#f59e0b' },
   ];
 
   // Handle workout press
@@ -208,6 +210,15 @@ export function AthleteHomeScreen() {
 
   // Render different screens based on active tab
   const renderScreen = () => {
+    // Show schedule if requested
+    if (showSchedule) {
+      return (
+        <AthleteScheduleScreen
+          onBack={() => setShowSchedule(false)}
+        />
+      );
+    }
+
     // Show workout execution if a workout is being executed
     if (executingWorkoutId !== null) {
       return (
@@ -525,8 +536,8 @@ export function AthleteHomeScreen() {
                     setActiveTab('trainer');
                   } else if (action.title === 'Test History') {
                     setActiveTab('workouts');
-                  } else if (action.title === 'Goals') {
-                    showComingSoonAlert();
+                  } else if (action.title === 'Schedule') {
+                    setShowSchedule(true);
                   }
                 }}
               >
