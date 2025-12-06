@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm --filter jejakathlete-web build",
-  "outputDirectory": "packages/jejakathlete-web/.next",
   "installCommand": "pnpm install",
   "framework": "nextjs"
 }
