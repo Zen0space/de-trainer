@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as Linking from 'expo-linking';
 import { supabase, Profile, TrainerProfile, AthleteProfile, UserRole } from '../lib/supabase';
-import { Session, User, AuthError } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 
 // =============================================
 // Types
@@ -64,6 +65,7 @@ export interface AuthContextType {
   isAthlete: () => boolean;
   isAdmin: () => boolean;
   refreshUser: () => Promise<void>;
+  setSessionFromUrl: (url: string) => Promise<void>;
 }
 
 // =============================================
@@ -363,6 +365,74 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Handle session from web auth callback URL
+  const setSessionFromUrl = async (url: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      console.log('Setting session from URL:', url);
+      
+      const parsedUrl = new URL(url);
+      const accessToken = parsedUrl.searchParams.get('access_token');
+      const refreshToken = parsedUrl.searchParams.get('refresh_token');
+      
+      console.log('Tokens found:', { 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken 
+      });
+      
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        
+        if (error) {
+          console.error('Error setting session:', error.message);
+          return;
+        }
+        
+        console.log('Session set successfully:', !!data.session);
+        
+        if (data.session?.user) {
+          const profile = await fetchUserProfile(data.session.user.id);
+          if (profile) {
+            console.log('User profile loaded:', profile.username);
+            setUser(profile);
+          }
+        }
+      } else {
+        console.warn('No tokens found in URL');
+      }
+    } catch (error) {
+      console.error('Error parsing auth URL:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Listen for deep link auth callbacks
+  useEffect(() => {
+    const handleDeepLink = ({ url }: { url: string }) => {
+      if (url.includes('auth/callback') || url.includes('access_token')) {
+        setSessionFromUrl(url);
+      }
+    };
+
+    // Listen for incoming links
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Check if app was opened from a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url && (url.includes('auth/callback') || url.includes('access_token'))) {
+        setSessionFromUrl(url);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   // =============================================
   // Utility Methods
   // =============================================
@@ -387,6 +457,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     isAthlete,
     isAdmin,
     refreshUser,
+    setSessionFromUrl,
   };
 
   return (

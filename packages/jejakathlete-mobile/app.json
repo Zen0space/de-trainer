@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zen0team.detrainer",
-      "associatedDomains": ["applinks:jejakathlete.vercel.app"]
+      "associatedDomains": ["applinks:jejak-athlete.vercel.app"]
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +36,7 @@
             },
             {
               "scheme": "https",
-              "host": "jejakathlete.vercel.app",
+              "host": "jejak-athlete.vercel.app",
               "pathPrefix": "/auth"
             }
           ],

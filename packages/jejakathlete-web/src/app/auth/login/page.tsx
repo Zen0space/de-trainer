@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthCard } from '../_components/AuthCard';
 import { OAuthButtons } from '../_components/OAuthButtons';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { loginSchema } from '@jejakathlete/shared';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect_to');
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +33,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -38,6 +41,13 @@ export default function LoginPage() {
       if (signInError) {
         setError(signInError.message);
         setIsLoading(false);
+        return;
+      }
+
+      // If mobile redirect requested, redirect with tokens
+      if (redirectTo && data.session) {
+        const mobileUrl = `${redirectTo}?access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}`;
+        window.location.href = mobileUrl;
         return;
       }
 
@@ -51,7 +61,7 @@ export default function LoginPage() {
   return (
     <AuthCard title="Welcome back" subtitle="Sign in to your account">
       {/* OAuth */}
-      <OAuthButtons />
+      <OAuthButtons redirectTo={redirectTo || undefined} />
 
       {/* Divider */}
       <div className="relative my-6">
@@ -121,10 +131,25 @@ export default function LoginPage() {
       {/* Footer */}
       <p className="mt-6 text-center text-text-secondary text-sm">
         Don&apos;t have an account?{' '}
-        <Link href="/auth/register" className="text-accent hover:text-accent-hover font-medium">
+        <Link 
+          href={redirectTo ? `/auth/register?redirect_to=${encodeURIComponent(redirectTo)}` : '/auth/register'} 
+          className="text-accent hover:text-accent-hover font-medium"
+        >
           Create one
         </Link>
       </p>
     </AuthCard>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

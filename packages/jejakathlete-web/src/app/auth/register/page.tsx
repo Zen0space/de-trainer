@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthCard } from '../_components/AuthCard';
 import { OAuthButtons } from '../_components/OAuthButtons';
@@ -12,8 +12,11 @@ import { registerSchema } from '@jejakathlete/shared';
 type Role = 'athlete' | 'trainer';
 type AthleteLevel = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect_to');
+  
   const [role, setRole] = useState<Role>('athlete');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,8 +90,18 @@ export default function RegisterPage() {
         return;
       }
 
-      if (authData.user) {
+      if (authData.user && authData.session) {
+        // If mobile redirect requested, redirect with tokens
+        if (redirectTo) {
+          const mobileUrl = `${redirectTo}?access_token=${authData.session.access_token}&refresh_token=${authData.session.refresh_token}`;
+          window.location.href = mobileUrl;
+          return;
+        }
+        
         router.push('/auth/success?type=signup');
+      } else {
+        // Email confirmation required
+        router.push('/auth/success?type=signup&confirm=email');
       }
     } catch {
       setError('An unexpected error occurred');
@@ -99,7 +112,7 @@ export default function RegisterPage() {
   return (
     <AuthCard title="Create account" subtitle="Join JejakAthlete today">
       {/* OAuth */}
-      <OAuthButtons />
+      <OAuthButtons redirectTo={redirectTo || undefined} />
 
       {/* Divider */}
       <div className="relative my-6">
@@ -283,10 +296,25 @@ export default function RegisterPage() {
       {/* Footer */}
       <p className="mt-6 text-center text-text-secondary text-sm">
         Already have an account?{' '}
-        <Link href="/auth/login" className="text-accent hover:text-accent-hover font-medium">
+        <Link 
+          href={redirectTo ? `/auth/login?redirect_to=${encodeURIComponent(redirectTo)}` : '/auth/login'} 
+          className="text-accent hover:text-accent-hover font-medium"
+        >
           Sign in
         </Link>
       </p>
     </AuthCard>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }
