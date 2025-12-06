@@ -1,0 +1,46 @@
+{
+  "rules": [
+    {
+      "name": "Always use sequential thinking",
+      "description": "Use sequential thinking MCP server for all complex reasoning tasks",
+      "pattern": ".*",
+      "servers": ["sequential-thinking"],
+      "priority": 1
+    }
+  ],
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "think",
+        "analyze",
+        "reason",
+        "plan"
+      ]
+    },
+    "mcp-turso-cloud": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-turso-cloud"
+      ],
+      "env": {
+        "TURSO_API_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJ1bW8ya3JudUVmQ0lxdDY3enlQWk1RIn0.oAo4kYbC9hfk87OoYq2gzwcTu2aNguX82jgL9FdnaMQnmtOmZqC3SUIZtQAPWA7MEt0y-qceU_vDXlomd-aEDA",
+        "TURSO_ORGANIZATION": "tartnenas",
+        "TURSO_DEFAULT_DATABASE": "de-trainer"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "execute_read_only_query",
+        "execute_query",
+        "list_tables",
+        "describe_table"
+      ]
+    }
+  }
+}
