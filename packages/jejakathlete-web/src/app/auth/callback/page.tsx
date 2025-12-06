@@ -49,8 +49,8 @@ export default async function AuthCallbackPage({ searchParams }: PageProps) {
       redirect(mobileUrl);
     }
 
-    // Otherwise redirect to dashboard (web flow)
-    redirect('/dashboard');
+    // Otherwise redirect to success page (web flow)
+    redirect('/auth/success');
   }
 
   // No code provided, redirect to home
