@@ -849,14 +849,15 @@ export function AthleteProgressScreen() {
                 Loading your progress...
               </Text>
             </View>
-          ) : progressData.length > 0 ? (
+          ) : (
             <>
-              {/* Tab Selector */}
+              {/* Tab Selector - Always show */}
               <TabSelector />
 
               {/* Tab Content */}
               {selectedTab === 'stats' ? (
-                <>
+                progressData.length > 0 ? (
+                  <>
                   {/* Progress Stats */}
                   <View style={{
                     flexDirection: 'row',
@@ -993,22 +994,23 @@ export function AthleteProgressScreen() {
                       </View>
                     </View>
                   ) : null}
-                </>
+                  </>
+                ) : (
+                  /* Empty State for Stats Tab */
+                  <EmptyState
+                    icon="trending-up"
+                    title="No Progress Data Yet"
+                    description="Your trainer hasn't added any fitness test results yet. Once they start tracking your performance, your progress will appear here."
+                  />
+                )
               ) : (
                 /* Body Metrics Tab */
                 <AthleteBodyMetricsStats
                   athleteId={user?.id || 0}
-                  athleteName={user?.name || 'Athlete'}
+                  athleteName={user?.full_name || 'Athlete'}
                 />
               )}
             </>
-          ) : (
-            /* Empty State */
-            <EmptyState
-              icon="trending-up"
-              title="No Progress Data Yet"
-              description="Your trainer hasn't added any fitness test results yet. Once they start tracking your performance, your progress will appear here."
-            />
           )}
 
         </View>
