@@ -6,7 +6,14 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      tailwindcss:
+        specifier: ^3.3.0
+        version: 3.4.18(yaml@2.8.2)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
 
   packages/jejakathlete-mobile:
     dependencies:
@@ -146,12 +153,6 @@ importers:
       nativewind:
         specifier: ^2.0.11
         version: 2.0.11(react@19.2.1)(tailwindcss@3.4.18(yaml@2.8.2))
-      tailwindcss:
-        specifier: ^3.3.0
-        version: 3.4.18(yaml@2.8.2)
-      typescript:
-        specifier: ~5.9.2
-        version: 5.9.3
 
   packages/jejakathlete-web:
     dependencies:
@@ -162,10 +163,10 @@ importers:
         specifier: ^0.5.2
         version: 0.5.2(@supabase/supabase-js@2.86.2)
       '@supabase/supabase-js':
-        specifier: ^2.47.0
+        specifier: ^2.86.2
         version: 2.86.2
       '@tanstack/react-query':
-        specifier: ^5.60.0
+        specifier: ^5.85.3
         version: 5.90.12(react@19.2.1)
       '@trpc/client':
         specifier: ^11.0.0-rc.608
@@ -207,22 +208,12 @@ importers:
       postcss:
         specifier: ^8.4.31
         version: 8.5.6
-      tailwindcss:
-        specifier: ^3.3.0
-        version: 3.4.18(yaml@2.8.2)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
 
   packages/shared:
     dependencies:
       zod:
         specifier: ^3.22.0
         version: 3.25.76
-    devDependencies:
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
 
 packages:
 
