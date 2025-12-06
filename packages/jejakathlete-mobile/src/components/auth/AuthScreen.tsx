@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, KeyboardAvoidingView, Alert, Text, useWindowDimensions, Pressable, ScrollView } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
-import { RegisterTrainerData, RegisterAthleteData } from '../../types/auth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Dropdown } from '../ui/Dropdown';
 import { TabView } from '../ui/TabView';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
-import { tursoDbHelpers } from '../../lib/turso-database';
 
 type AuthMode = 'login' | 'register';
 type UserRole = 'trainer' | 'athlete';
 
 interface LoginForm {
-  identifier: string; // Can be username or email
+  email: string;
   password: string;
 }
 
@@ -41,34 +39,29 @@ export function AuthScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   
   // Responsive design calculations
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const isSmallScreen = width < 380;
   const isTablet = width > 600;
   
-  // Responsive values - optimized for mobile apps
+  // Responsive values
   const containerPadding = isSmallScreen ? 16 : isTablet ? 32 : 20;
   const titleFontSize = isSmallScreen ? 24 : isTablet ? 32 : 28;
   const subtitleFontSize = isSmallScreen ? 14 : isTablet ? 16 : 15;
-  const inputFontSize = 16; // Standard 16sp for all screen sizes
-  const spacing = isSmallScreen ? 10 : isTablet ? 16 : 12; // Reduced spacing
-  const headerSpacing = isSmallScreen ? 24 : isTablet ? 40 : 32; // Reduced header spacing
+  const inputFontSize = 16;
+  const spacing = isSmallScreen ? 10 : isTablet ? 16 : 12;
+  const headerSpacing = isSmallScreen ? 24 : isTablet ? 40 : 32;
   const containerWidth = isTablet ? '60%' : '100%';
   const maxContainerWidth = isTablet ? 500 : 400;
   
   // Keyboard-aware scrolling
   const { keyboardAvoidingViewProps, scrollViewProps } = useKeyboardAware({ containerPadding });
   
-  // Monitor keyboard state changes for responsive behavior
-  useEffect(() => {
-    // Keyboard state is handled by the useKeyboardAware hook
-  }, [keyboard.isVisible, keyboard.height, keyboard.duration, keyboard.easing, height]);
-  
   // Experience level options
   const experienceLevels = [
     { label: 'Beginner', value: 'beginner' },
     { label: 'Intermediate', value: 'intermediate' },
     { label: 'Advanced', value: 'advanced' },
-    { label: 'Professional', value: 'professional' }
+    { label: 'Elite', value: 'elite' }
   ];
   
   // Tab configuration
@@ -78,7 +71,7 @@ export function AuthScreen() {
   ];
   
   const [loginForm, setLoginForm] = useState<LoginForm>({
-    identifier: '',
+    email: '',
     password: '',
   });
   
@@ -92,25 +85,11 @@ export function AuthScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Helper function to detect if input is email or username
-  const isEmail = (input: string): boolean => {
-    return input.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
-  };
-
   // Validation helper functions
-  const validateIdentifier = (identifier: string): string | null => {
-    if (!identifier) return 'Username or email is required';
-    if (identifier.includes(' ')) return 'Username or email cannot contain spaces';
-    
-    // If it looks like an email, validate as email
-    if (identifier.includes('@')) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(identifier)) return 'Please enter a valid email address';
-    } else {
-      // Validate as username
-      if (identifier.length < 3) return 'Username must be at least 3 characters';
-      if (!/^[a-zA-Z0-9_.-]+$/.test(identifier)) return 'Username can only contain letters, numbers, dots, hyphens, and underscores';
-    }
+  const validateEmail = (email: string): string | null => {
+    if (!email) return 'Email is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Please enter a valid email address';
     return null;
   };
 
@@ -122,48 +101,23 @@ export function AuthScreen() {
     return null;
   };
 
-  const validateEmail = (email: string): string | null => {
-    if (!email) return 'Email is required';
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return 'Please enter a valid email address';
-    return null;
-  };
-
   const validateTrainerCode = (trainerCode: string): string | null => {
     if (!trainerCode) return 'Trainer code is required';
-    
-    // Check format: TR followed by exactly 3 digits
     const trainerCodePattern = /^TR\d{3}$/;
     if (!trainerCodePattern.test(trainerCode)) {
       return 'Trainer code must be in format TR### (e.g., TR001, TR002)';
     }
-    
     return null;
-  };
-
-  const checkTrainerCodeExists = async (trainerCode: string): Promise<boolean> => {
-    try {
-      const existingTrainer = await tursoDbHelpers.get(
-        'SELECT trainer_code FROM trainers WHERE trainer_code = ?',
-        [trainerCode]
-      );
-      return !!existingTrainer;
-    } catch (error) {
-      console.error('Error checking trainer code:', error);
-      return false; // If error, allow the registration to proceed
-    }
   };
 
   const validateForm = async () => {
     const newErrors: Record<string, string> = {};
     
     if (authMode === 'login') {
-      // Login validation - flexible identifier (username or email)
-      const identifierError = validateIdentifier(loginForm.identifier);
-      if (identifierError) newErrors.identifier = identifierError;
+      const emailError = validateEmail(loginForm.email);
+      if (emailError) newErrors.email = emailError;
       if (!loginForm.password) newErrors.password = 'Password is required';
     } else {
-      // Registration validation
       const usernameError = validateUsername(registerForm.username);
       if (usernameError) newErrors.username = usernameError;
       
@@ -178,19 +132,11 @@ export function AuthScreen() {
       if (!registerForm.full_name) newErrors.full_name = 'Full name is required';
       
       if (registerForm.role === 'trainer') {
-        // Trainer-specific validation
         const trainerCodeError = validateTrainerCode(registerForm.trainer_code || '');
         if (trainerCodeError) {
           newErrors.trainer_code = trainerCodeError;
-        } else {
-          // Check if trainer code already exists
-          const trainerCodeExists = await checkTrainerCodeExists(registerForm.trainer_code || '');
-          if (trainerCodeExists) {
-            newErrors.trainer_code = `Trainer code ${registerForm.trainer_code} is already taken. Please choose a different number.`;
-          }
         }
       } else {
-        // Athlete-specific validation
         if (!registerForm.sport) newErrors.sport = 'Sport is required';
       }
     }
@@ -203,12 +149,11 @@ export function AuthScreen() {
     if (!(await validateForm())) return;
     
     try {
-      // Determine if identifier is email or username
-      const loginData = isEmail(loginForm.identifier) 
-        ? { email: loginForm.identifier, password: loginForm.password }
-        : { username: loginForm.identifier, password: loginForm.password };
+      const result = await login({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
       
-      const result = await login(loginData);
       if (!result.success) {
         Alert.alert('Login Failed', result.error || 'Please check your credentials');
       }
@@ -221,26 +166,44 @@ export function AuthScreen() {
     if (!(await validateForm())) return;
     
     try {
-      const result = await register(registerForm as RegisterTrainerData | RegisterAthleteData);
+      const userData = registerForm.role === 'trainer'
+        ? {
+            email: registerForm.email,
+            password: registerForm.password,
+            full_name: registerForm.full_name,
+            username: registerForm.username,
+            role: 'trainer' as const,
+            trainer_code: registerForm.trainer_code!,
+            certification_id: registerForm.certification_id,
+            specialization: registerForm.specialization,
+          }
+        : {
+            email: registerForm.email,
+            password: registerForm.password,
+            full_name: registerForm.full_name,
+            username: registerForm.username,
+            role: 'athlete' as const,
+            sport: registerForm.sport!,
+            level: (registerForm.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'elite',
+          };
+      
+      const result = await register(userData);
+      
       if (!result.success) {
         Alert.alert('Registration Failed', result.error || 'Please check your information');
       } else {
-        // Registration successful - show success message and navigate to login
         Alert.alert(
           'Registration Successful!', 
-          'Your account has been created successfully. Please log in with your credentials.',
+          'Your account has been created. Please check your email to verify your account, then you can log in.',
           [
             {
               text: 'OK',
               onPress: () => {
-                // Switch to login mode
                 setAuthMode('login');
-                // Pre-fill login identifier with username
                 setLoginForm({
-                  identifier: registerForm.username,
+                  email: registerForm.email,
                   password: ''
                 });
-                // Clear errors and registration form
                 setErrors({});
                 setRegisterForm({
                   username: '',
@@ -290,7 +253,7 @@ export function AuthScreen() {
         <View style={{ maxWidth: maxContainerWidth, width: containerWidth }} className="self-center">
           {/* Modern Header with enhanced styling */}
           <View style={{ marginBottom: headerSpacing }} className="items-center">
-            {/* Logo/Icon placeholder - could be replaced with actual logo */}
+            {/* Logo/Icon placeholder */}
             <View className="w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center shadow-lg">
               <Text className="text-white text-2xl font-bold">JA</Text>
             </View>
@@ -346,33 +309,30 @@ export function AuthScreen() {
               />
             )}
 
-            <Input
-              placeholder={authMode === 'login' ? "Enter Username or Email" : "Enter Username"}
-              value={authMode === 'login' ? loginForm.identifier : registerForm.username}
-              onChangeText={(text) => {
-                if (authMode === 'login') {
-                  setLoginForm({ ...loginForm, identifier: text });
-                } else {
-                  setRegisterForm({ ...registerForm, username: text });
-                }
-              }}
-              error={authMode === 'login' ? errors.identifier : errors.username}
-              keyboardType={authMode === 'login' ? "default" : "default"}
-              autoCapitalize="none"
-            />
-
             {authMode === 'register' && (
               <Input
-                placeholder="Enter Email Address"
-                value={registerForm.email}
-                onChangeText={(text) => {
-                  setRegisterForm({ ...registerForm, email: text });
-                }}
-                error={errors.email}
-                keyboardType="email-address"
+                placeholder="Username"
+                value={registerForm.username}
+                onChangeText={(text) => setRegisterForm({ ...registerForm, username: text })}
+                error={errors.username}
                 autoCapitalize="none"
               />
             )}
+
+            <Input
+              placeholder="Email Address"
+              value={authMode === 'login' ? loginForm.email : registerForm.email}
+              onChangeText={(text) => {
+                if (authMode === 'login') {
+                  setLoginForm({ ...loginForm, email: text });
+                } else {
+                  setRegisterForm({ ...registerForm, email: text });
+                }
+              }}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
             <Input
               placeholder="Password"
@@ -399,7 +359,6 @@ export function AuthScreen() {
                         placeholder="Enter your trainer code (e.g., TR001)"
                         value={registerForm.trainer_code || ''}
                         onChangeText={(text) => {
-                          // Auto-format: ensure TR prefix and uppercase, limit to 5 characters
                           let formattedCode = text.toUpperCase().substring(0, 5);
                           if (!formattedCode.startsWith('TR') && formattedCode.length > 0) {
                             formattedCode = 'TR' + formattedCode.replace(/^TR/i, '');
@@ -451,7 +410,7 @@ export function AuthScreen() {
             {/* Forgot Password */}
             {authMode === 'login' && (
               <View style={{ marginBottom: spacing }} className="items-end">
-                <Pressable onPress={() => {/* TODO: Implement forgot password */}}>
+                <Pressable onPress={() => {/* TODO: Implement forgot password with supabase.auth.resetPasswordForEmail */}}>
                   <Text className="text-blue-600 text-sm font-medium">
                     Forgot Password?
                   </Text>

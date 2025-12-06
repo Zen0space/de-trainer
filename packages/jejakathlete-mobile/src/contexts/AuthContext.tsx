@@ -1,15 +1,74 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useStorageState } from './useStorageState';
-import { loginUser, registerUser, refreshUserData } from '../lib/api';
+import { supabase, Profile, TrainerProfile, AthleteProfile, UserRole } from '../lib/supabase';
+import { Session, User, AuthError } from '@supabase/supabase-js';
 
-import { 
-  AuthUser, 
-  AuthContextType, 
-  LoginCredentials, 
-  RegisterTrainerData, 
-  RegisterAthleteData, 
-  AuthResponse 
-} from '../types/auth';
+// =============================================
+// Types
+// =============================================
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  username: string | null;
+  role: UserRole;
+  avatar_url: string | null;
+  is_verified: boolean;
+  created_at: string;
+  // Role-specific data
+  trainer_data?: TrainerProfile;
+  athlete_data?: AthleteProfile;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterTrainerData {
+  email: string;
+  password: string;
+  full_name: string;
+  username: string;
+  role: 'trainer';
+  trainer_code: string;
+  certification_id?: string;
+  specialization?: string;
+}
+
+export interface RegisterAthleteData {
+  email: string;
+  password: string;
+  full_name: string;
+  username: string;
+  role: 'athlete';
+  sport: string;
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: AuthUser;
+  error?: string;
+}
+
+export interface AuthContextType {
+  user: AuthUser | null;
+  session: Session | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  register: (userData: RegisterTrainerData | RegisterAthleteData) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
+  isTrainer: () => boolean;
+  isAthlete: () => boolean;
+  isAdmin: () => boolean;
+  refreshUser: () => Promise<void>;
+}
+
+// =============================================
+// Context
+// =============================================
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -21,140 +80,312 @@ export function useSession() {
   return value;
 }
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [[isLoading, session], setSession] = useStorageState('session');
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+// =============================================
+// Helper Functions
+// =============================================
 
-  // Initialize user from stored session
-  useEffect(() => {
-    const initializeAuth = async () => {
-      if (session) {
-        try {
+async function fetchUserProfile(userId: string): Promise<AuthUser | null> {
+  try {
+    // Fetch base profile
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-          
-          // Extract user ID from session token (format: session_userId_timestamp)
-          const sessionParts = session.split('_');
-          if (sessionParts.length >= 2 && sessionParts[0] === 'session') {
-            const userId = parseInt(sessionParts[1]);
-            
-            if (!isNaN(userId)) {
-
-              const response = await refreshUserData(userId);
-              
-              if (response.success && response.user) {
-
-                setUser(response.user);
-              } else {
-
-                setSession(null);
-              }
-            } else {
-
-              setSession(null);
-            }
-          } else {
-
-            setSession(null);
-          }
-        } catch (error) {
-          console.error('❌ Error restoring session:', error);
-          setSession(null);
-        }
-      }
-      setIsInitializing(false);
-    };
-
-    if (!isLoading) {
-      initializeAuth();
+    if (profileError || !profile) {
+      console.error('Error fetching profile:', profileError);
+      return null;
     }
-  }, [isLoading, session, setSession]);
+
+    // Fetch role-specific data
+    let trainer_data: TrainerProfile | undefined;
+    let athlete_data: AthleteProfile | undefined;
+
+    if (profile.role === 'trainer') {
+      const { data: trainerData } = await supabase
+        .from('trainers')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      trainer_data = trainerData || undefined;
+    } else if (profile.role === 'athlete') {
+      const { data: athleteData } = await supabase
+        .from('athletes')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      athlete_data = athleteData || undefined;
+    }
+
+    // Get email from auth user
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    return {
+      id: profile.id,
+      email: authUser?.email || '',
+      full_name: profile.full_name,
+      username: profile.username,
+      role: profile.role,
+      avatar_url: profile.avatar_url,
+      is_verified: profile.is_verified,
+      created_at: profile.created_at,
+      trainer_data,
+      athlete_data,
+    };
+  } catch (error) {
+    console.error('Error in fetchUserProfile:', error);
+    return null;
+  }
+}
+
+// Generate unique trainer code
+function generateTrainerCode(): string {
+  const randomNum = Math.floor(Math.random() * 900) + 100; // 100-999
+  return `TR${randomNum}`;
+}
+
+// =============================================
+// Provider Component
+// =============================================
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize auth state
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then(setUser);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        setSession(session);
+        
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // =============================================
+  // Auth Methods
+  // =============================================
 
   const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await loginUser(credentials);
-
+      setIsLoading(true);
       
-      if (response.success && response.user) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-        setUser(response.user);
-        
-        // For now, create a simple session token since we don't have JWT implementation
-        const simpleToken = `session_${response.user.id}_${Date.now()}`;
-        setSession(simpleToken);
-        return response;
-      } else {
-
-        return response;
+      if (error) {
+        return { 
+          success: false, 
+          error: error.message 
+        };
       }
+
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        if (profile) {
+          setUser(profile);
+          return { success: true, user: profile };
+        }
+      }
+
+      return { 
+        success: false, 
+        error: 'Failed to load user profile' 
+      };
     } catch (error) {
       console.error('Login error:', error);
       return {
         success: false,
-        error: 'Login failed. Please try again.'
+        error: 'An unexpected error occurred during login',
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const register = async (userData: RegisterTrainerData | RegisterAthleteData): Promise<AuthResponse> => {
+  const register = async (
+    userData: RegisterTrainerData | RegisterAthleteData
+  ): Promise<AuthResponse> => {
     try {
-      const response = await registerUser(userData);
-      
-      if (response.success && response.user && response.token) {
-        setUser(response.user);
-        setSession(response.token);
-        return response;
-      } else {
-        return response;
+      setIsLoading(true);
+
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.full_name,
+            username: userData.username,
+            role: userData.role,
+          },
+        },
+      });
+
+      if (authError) {
+        return { success: false, error: authError.message };
       }
+
+      if (!authData.user) {
+        return { success: false, error: 'Failed to create user account' };
+      }
+
+      const userId = authData.user.id;
+
+      // 2. Create user profile in public.users table
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          full_name: userData.full_name,
+          username: userData.username,
+          role: userData.role,
+          is_verified: false,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Attempt cleanup - delete auth user if profile creation fails
+        await supabase.auth.admin?.deleteUser(userId);
+        return { 
+          success: false, 
+          error: 'Failed to create user profile: ' + profileError.message 
+        };
+      }
+
+      // 3. Create role-specific profile
+      if (userData.role === 'trainer') {
+        const trainerData = userData as RegisterTrainerData;
+        const { error: trainerError } = await supabase
+          .from('trainers')
+          .insert({
+            user_id: userId,
+            trainer_code: trainerData.trainer_code || generateTrainerCode(),
+            certification_id: trainerData.certification_id || null,
+            specialization: trainerData.specialization || null,
+            verification_status: 'pending',
+          });
+
+        if (trainerError) {
+          console.error('Trainer profile error:', trainerError);
+          return { 
+            success: false, 
+            error: 'Failed to create trainer profile: ' + trainerError.message 
+          };
+        }
+      } else if (userData.role === 'athlete') {
+        const athleteData = userData as RegisterAthleteData;
+        const { error: athleteError } = await supabase
+          .from('athletes')
+          .insert({
+            user_id: userId,
+            sport: athleteData.sport,
+            level: athleteData.level || 'beginner',
+          });
+
+        if (athleteError) {
+          console.error('Athlete profile error:', athleteError);
+          return { 
+            success: false, 
+            error: 'Failed to create athlete profile: ' + athleteError.message 
+          };
+        }
+      }
+
+      // 4. Fetch complete user profile
+      const profile = await fetchUserProfile(userId);
+      if (profile) {
+        setUser(profile);
+        return { success: true, user: profile };
+      }
+
+      return { 
+        success: true, 
+        error: 'Account created successfully. Please check your email to verify your account.' 
+      };
     } catch (error) {
       console.error('Registration error:', error);
       return {
         success: false,
-        error: 'Registration failed. Please try again.'
+        error: 'An unexpected error occurred during registration',
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
+      setIsLoading(true);
+      await supabase.auth.signOut();
       setUser(null);
       setSession(null);
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const refreshUser = async (): Promise<void> => {
-    if (session && user) {
-      try {
-        const response = await refreshUserData(Number(user.id));
-        if (response.success && response.user) {
-          setUser(response.user);
-        }
-      } catch (error) {
-        console.error('Error refreshing user:', error);
+    if (session?.user) {
+      const profile = await fetchUserProfile(session.user.id);
+      if (profile) {
+        setUser(profile);
       }
     }
   };
 
-  const isTrainer = (): boolean => {
-    return user?.role === 'trainer';
-  };
+  // =============================================
+  // Utility Methods
+  // =============================================
 
-  const isAthlete = (): boolean => {
-    return user?.role === 'athlete';
-  };
+  const isTrainer = (): boolean => user?.role === 'trainer';
+  const isAthlete = (): boolean => user?.role === 'athlete';
+  const isAdmin = (): boolean => user?.role === 'admin' || user?.role === 'rekabytes-admin';
+
+  // =============================================
+  // Provider Value
+  // =============================================
 
   const contextValue: AuthContextType = {
     user,
-    isLoading: isLoading || isInitializing,
+    session,
+    isLoading,
     isAuthenticated: !!user && !!session,
     login,
     register,
     logout,
     isTrainer,
     isAthlete,
+    isAdmin,
     refreshUser,
   };
 
@@ -164,32 +395,3 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-// Utility function to parse JWT token payload
-function parseTokenPayload(token: string): AuthUser | null {
-  try {
-    // Simple JWT parsing (in production, use a proper JWT library)
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    
-    const payload = JSON.parse(jsonPayload);
-    
-    // Check if token is expired
-    if (payload.exp && Date.now() >= payload.exp * 1000) {
-      return null;
-    }
-    
-    return payload.user || null;
-  } catch (error) {
-    console.error('Error parsing token:', error);
-    return null;
-  }
-}
-
-

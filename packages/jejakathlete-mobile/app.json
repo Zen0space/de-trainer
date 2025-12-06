@@ -3,6 +3,7 @@
     "name": "Jejak Atlet",
     "slug": "de-trainer",
     "version": "0.2.12",
+    "scheme": "jejakathlete",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +16,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.zen0team.detrainer"
+      "bundleIdentifier": "com.zen0team.detrainer",
+      "associatedDomains": ["applinks:jejakathlete.vercel.app"]
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +25,24 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.zen0team.detrainer"
+      "package": "com.zen0team.detrainer",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "jejakathlete"
+            },
+            {
+              "scheme": "https",
+              "host": "jejakathlete.vercel.app",
+              "pathPrefix": "/auth"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,7 +54,9 @@
     },
     "owner": "zen0team",
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ]
   }
 }
+

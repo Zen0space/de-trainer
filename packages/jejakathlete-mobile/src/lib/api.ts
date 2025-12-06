@@ -1,12 +1,66 @@
 import { tursoDbHelpers } from './turso-database';
 import { verifyPassword, hashPassword } from './crypto';
-import { 
-  AuthResponse, 
-  LoginCredentials, 
-  RegisterTrainerData, 
-  RegisterAthleteData,
-  AuthUser
-} from '../types/auth';
+
+// Legacy auth types for Turso-based operations (to be deprecated)
+// New auth is handled by Supabase in AuthContext.tsx
+interface LegacyAuthResponse {
+  success: boolean;
+  user?: {
+    id: number | string;
+    username: string | null;
+    email: string;
+    full_name: string | null;
+    role: string;
+    created_at: string;
+    is_verified: boolean;
+    trainer_data?: {
+      trainer_code: string;
+      certification_id: string | null;
+      specialization: string | null;
+      verification_status: string;
+    };
+    athlete_data?: {
+      sport: string;
+      level: string;
+    };
+  };
+  token?: string;
+  message?: string;
+  error?: string;
+}
+
+interface LegacyLoginCredentials {
+  email?: string;
+  username?: string;
+  password: string;
+}
+
+interface LegacyRegisterTrainerData {
+  email: string;
+  password: string;
+  full_name: string;
+  username: string;
+  role: 'trainer';
+  trainer_code: string;
+  certification_id?: string;
+  specialization?: string;
+}
+
+interface LegacyRegisterAthleteData {
+  email: string;
+  password: string;
+  full_name: string;
+  username: string;
+  role: 'athlete';
+  sport: string;
+  level: string;
+}
+
+type AuthResponse = LegacyAuthResponse;
+type LoginCredentials = LegacyLoginCredentials;
+type RegisterTrainerData = LegacyRegisterTrainerData;
+type RegisterAthleteData = LegacyRegisterAthleteData;
+type AuthUser = LegacyAuthResponse['user'];
 
 // Toast notification callback (set by UI layer)
 let toastCallback: ((message: string, type: 'success' | 'error' | 'warning' | 'info') => void) | null = null;
@@ -251,8 +305,8 @@ export async function registerUser(data: RegisterTrainerData | RegisterAthleteDa
       const trainerData = data as RegisterTrainerData;
       userData.trainer_data = {
         trainer_code: trainerData.trainer_code,
-        certification_id: trainerData.certification_id,
-        specialization: trainerData.specialization,
+        certification_id: trainerData.certification_id ?? null,
+        specialization: trainerData.specialization ?? null,
         verification_status: 'pending'
       };
     } else {
