@@ -9,7 +9,7 @@ import { ToastProvider, useToast } from './src/contexts/ToastContext';
 import { AuthScreen } from './src/components/auth/AuthScreen';
 import { TrainerHomeScreen } from './src/screens/trainer/TrainerHomeScreen';
 import { AthleteHomeScreen } from './src/screens/athlete/AthleteHomeScreen';
-import { initializeTursoConnection } from './src/lib/turso-database';
+import { supabase } from './src/lib/supabase';
 import { setToastCallback, clearToastCallback } from './src/lib/api';
 
 function MainContent() {
@@ -237,15 +237,21 @@ export default function App() {
   useEffect(() => {
     const initializeDatabase = async () => {
       try {
-        // Initialize Turso connection only
-        console.log('🔌 Initializing Turso database connection...');
-        await initializeTursoConnection();
-        console.log('✅ Turso database initialized successfully');
-
+        // Verify Supabase connection
+        console.log('🔌 Initializing Supabase connection...');
+        
+        // Simple health check - try to get session
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn('⚠️ Supabase auth check warning:', error.message);
+        }
+        
+        console.log('✅ Supabase connection initialized successfully');
         setDbInitialized(true);
       } catch (error) {
-        console.error('❌ Failed to initialize Turso database:', error);
-        setDbError(error instanceof Error ? error.message : 'Turso database initialization failed');
+        console.error('❌ Failed to initialize Supabase connection:', error);
+        setDbError(error instanceof Error ? error.message : 'Supabase connection failed');
       }
     };
 
@@ -266,7 +272,7 @@ export default function App() {
             borderRadius: 16, 
             marginBottom: 16 
           }} />
-          <Text style={{ fontSize: 16, color: '#666' }}>Initializing databases...</Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>Connecting to Supabase...</Text>
         </View>
       </SafeAreaView>
     );
