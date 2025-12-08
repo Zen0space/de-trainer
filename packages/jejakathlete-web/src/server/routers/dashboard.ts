@@ -73,7 +73,7 @@ export const dashboardRouter = router({
       const stats = {
         totalWorkouts: workoutCount || 0,
         recentTestResults: recentTestCount || 0,
-        currentTrainer: trainerData?.trainer?.full_name || null,
+        currentTrainer: (trainerData as any)?.trainer?.full_name || null,
         personalRecords: personalRecordsCount || 0,
       };
 
