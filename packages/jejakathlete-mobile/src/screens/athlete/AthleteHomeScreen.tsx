@@ -13,7 +13,7 @@ import { WorkoutDetailScreen } from './WorkoutDetailScreen';
 import { WorkoutExecutionScreen } from './WorkoutExecutionScreen';
 import { AthleteScheduleScreen } from './AthleteScheduleScreen';
 import { OfflineIndicator } from '../../components/ui/OfflineIndicator';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 
 interface AthleteStats {
   totalWorkouts: number;
@@ -71,67 +71,26 @@ export function AthleteHomeScreen() {
     }
 
     try {
-      // Get athlete's current trainer
-      const trainerData = await tursoDbHelpers.get(`
-        SELECT 
-          u.full_name as trainer_name,
-          t.trainer_code
-        FROM enrollments e
-        JOIN users u ON e.trainer_id = u.id
-        JOIN trainers t ON t.user_id = u.id
-        WHERE e.athlete_id = ? AND e.status = 'approved'
-        LIMIT 1
-      `, [user.id]);
+      console.log('🔵 [AthleteHomeScreen] Fetching dashboard data via tRPC');
 
-      // Get total workout count (test results)
-      const workoutCount = await tursoDbHelpers.get(`
-        SELECT COUNT(*) as count
-        FROM test_results
-        WHERE athlete_id = ?
-      `, [user.id]);
+      // Fetch stats and activities using tRPC
+      const [stats, activities] = await Promise.all([
+        trpc.dashboard.getAthleteStats.query(),
+        trpc.dashboard.getRecentActivities.query({ limit: 10 }),
+      ]);
 
-      // Get recent test results count (last 30 days)
-      const recentTestCount = await tursoDbHelpers.get(`
-        SELECT COUNT(*) as count
-        FROM test_results
-        WHERE athlete_id = ? AND test_date >= date('now', '-30 days')
-      `, [user.id]);
+      setStats(stats);
+      setRecentActivities(activities);
 
-      // Get personal records count
-      const personalRecords = await tursoDbHelpers.get(`
-        SELECT COUNT(*) as count
-        FROM test_results
-        WHERE athlete_id = ? AND is_best_record = TRUE
-      `, [user.id]);
-
-      // Get recent activities (last 10 test results)
-      const recentTests = await tursoDbHelpers.all(`
-        SELECT 
-          tr.id,
-          t.name as test_name,
-          tr.result_text,
-          tr.test_date,
-          tr.is_best_record,
-          tr.notes
-        FROM test_results tr
-        JOIN tests t ON tr.test_id = t.id
-        WHERE tr.athlete_id = ?
-        ORDER BY tr.test_date DESC, tr.created_at DESC
-        LIMIT 10
-      `, [user.id]);
-
-
-
-      setStats({
-        totalWorkouts: workoutCount?.count || 0,
-        recentTestResults: recentTestCount?.count || 0,
-        currentTrainer: trainerData?.trainer_name || null,
-        personalRecords: personalRecords?.count || 0
+      console.log('✅ [AthleteHomeScreen] Dashboard data loaded via tRPC:', {
+        stats,
+        activitiesCount: activities.length,
       });
-
-      setRecentActivities(recentTests || []);
-    } catch (error) {
-      console.error('❌ Error fetching athlete dashboard data:', error);
+    } catch (error: any) {
+      console.error('❌ [AthleteHomeScreen] Error fetching dashboard data:', {
+        message: error?.message,
+        code: error?.code,
+      });
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

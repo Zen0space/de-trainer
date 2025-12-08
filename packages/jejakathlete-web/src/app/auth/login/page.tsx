@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthCard } from '../_components/AuthCard';
@@ -17,10 +17,13 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
+  const [manualRedirectUrl, setManualRedirectUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setDebugInfo('');
     setIsLoading(true);
 
     // Validate input
@@ -32,28 +35,83 @@ function LoginContent() {
     }
 
     try {
+      // Check if environment variables are loaded
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        setError('Supabase configuration missing. Please check environment variables.');
+        setDebugInfo(`URL: ${supabaseUrl ? 'OK' : 'MISSING'}, Key: ${supabaseKey ? 'OK' : 'MISSING'}`);
+        setIsLoading(false);
+        return;
+      }
+
+      setDebugInfo('Step 1: Creating Supabase client...');
       const supabase = createSupabaseBrowserClient();
+      
+      setDebugInfo('Step 2: Signing in...');
+      console.log('[Login] Attempting sign in with password');
+      console.log('[Login] Has redirect_to:', !!redirectTo);
+      
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
+        console.error('[Login] Sign in error:', signInError.message);
         setError(signInError.message);
+        setDebugInfo('Sign in failed: ' + signInError.message);
         setIsLoading(false);
         return;
       }
 
+      setDebugInfo('Step 3: Sign in successful, preparing redirect...');
+      console.log('[Login] Sign in successful');
+      console.log('[Login] Has session:', !!data.session);
+      console.log('[Login] Has tokens:', !!data.session?.access_token);
+
       // If mobile redirect requested, redirect with tokens
       if (redirectTo && data.session) {
-        const mobileUrl = `${redirectTo}?access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}`;
-        window.location.href = mobileUrl;
+        setDebugInfo('Step 4: Redirecting to mobile app...');
+        console.log('[Login] Redirecting to mobile app');
+        const mobileUrl = `${redirectTo}?access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}&expires_in=${data.session.expires_in}`;
+        console.log('[Login] Mobile URL constructed (sanitized)');
+        console.log('[Login] Redirect URL scheme:', redirectTo.split('://')[0]);
+        
+        // Try multiple redirect methods for better compatibility
+        try {
+          // Store URL for manual redirect button
+          setManualRedirectUrl(mobileUrl);
+          
+          // Method 1: Direct window.location (most reliable for deep links)
+          window.location.href = mobileUrl;
+          
+          // Method 2: Fallback with timeout
+          setTimeout(() => {
+            window.location.replace(mobileUrl);
+          }, 100);
+          
+          // Method 3: Show manual redirect button after 2 seconds
+          setTimeout(() => {
+            setDebugInfo('If not redirected automatically, tap the button below');
+            setIsLoading(false);
+          }, 2000);
+        } catch (redirectError) {
+          console.error('[Login] Redirect error:', redirectError);
+          setDebugInfo('Redirect failed. Please use the button below to continue.');
+          setIsLoading(false);
+        }
         return;
       }
 
+      setDebugInfo('Step 4: Redirecting to web success page...');
+      console.log('[Login] Redirecting to web success page');
       router.push('/auth/success');
-    } catch {
-      setError('An unexpected error occurred');
+    } catch (err) {
+      console.error('[Login] Unexpected error:', err);
+      setError('An unexpected error occurred: ' + String(err));
+      setDebugInfo('Unexpected error: ' + String(err));
       setIsLoading(false);
     }
   };
@@ -78,6 +136,24 @@ function LoginContent() {
         {error && (
           <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
             {error}
+          </div>
+        )}
+        
+        {debugInfo && (
+          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono">
+            {debugInfo}
+          </div>
+        )}
+        
+        {manualRedirectUrl && (
+          <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+            <p className="text-green-400 text-sm mb-3">Login successful! Tap the button below to return to the app:</p>
+            <a
+              href={manualRedirectUrl}
+              className="block w-full py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl text-center transition-colors"
+            >
+              Return to JejakAthlete App
+            </a>
           </div>
         )}
 

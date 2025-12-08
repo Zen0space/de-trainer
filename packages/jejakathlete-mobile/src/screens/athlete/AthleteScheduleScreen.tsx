@@ -7,7 +7,7 @@ import {
   RefreshControl
 } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 // Import refactored components
@@ -62,43 +62,32 @@ export function AthleteScheduleScreen({ onBack }: { onBack: () => void }) {
     }
 
     try {
-      const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd 00:00:00');
-      const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd 23:59:59');
+      const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
 
-      // Fetch events where the athlete is a participant
-      const result = await tursoDbHelpers.all(`
-        SELECT
-          e.id,
-          e.title,
-          e.description,
-          e.start_date,
-          e.end_date,
-          e.location,
-          e.status,
-          et.name as event_type_name,
-          et.color as event_type_color,
-          et.icon as event_type_icon,
-          u.full_name as created_by_name,
-          ep.status as participation_status,
-          COUNT(ep2.id) as total_participants,
-          COUNT(CASE WHEN ep2.status = 'confirmed' THEN 1 END) as confirmed_participants
-        FROM event_participants ep
-        JOIN events e ON ep.event_id = e.id
-        JOIN event_types et ON e.event_type_id = et.id
-        JOIN users u ON e.created_by_user_id = u.id
-        LEFT JOIN event_participants ep2 ON e.id = ep2.event_id
-        WHERE ep.athlete_id = ?
-        AND e.start_date >= ?
-        AND e.start_date <= ?
-        GROUP BY e.id, e.title, e.description, e.start_date, e.end_date, e.location, e.status,
-                 et.name, et.color, et.icon, u.full_name, ep.status
-        ORDER BY e.start_date ASC
-      `, [user.id, monthStart, monthEnd]);
+      const scheduleData = await trpc.events.getMySchedule.query({
+        start_date: monthStart,
+        end_date: monthEnd,
+      });
 
-      setEvents(result || []);
+      // Transform the data to match the expected format
+      const transformedEvents = scheduleData.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        start_date: event.start_date,
+        end_date: event.end_date,
+        location: event.location,
+        status: event.status,
+        event_type_name: event.event_type?.name,
+        event_type_color: event.event_type?.color,
+        event_type_icon: event.event_type?.icon,
+        created_by_name: event.created_by?.full_name,
+      }));
+      setEvents(transformedEvents);
     } catch (error) {
-      console.error('❌ Error fetching events:', error);
-      Alert.alert('Error', 'Failed to load events. Please try again.');
+      console.error('❌ Error fetching schedule:', error);
+      Alert.alert('Error', 'Failed to load schedule. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -107,13 +96,8 @@ export function AthleteScheduleScreen({ onBack }: { onBack: () => void }) {
 
   const fetchEventTypes = async () => {
     try {
-      const result = await tursoDbHelpers.all(`
-        SELECT id, name, color, icon
-        FROM event_types
-        ORDER BY name ASC
-      `);
-
-      setEventTypes(result || []);
+      const eventTypesData = await trpc.events.getEventTypes.query();
+      setEventTypes(eventTypesData);
     } catch (error) {
       console.error('❌ Error fetching event types:', error);
     }

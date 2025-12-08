@@ -6,11 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useSession } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import {
-  getWorkoutTemplateById,
-  createWorkoutTemplate,
-  updateWorkoutTemplate
-} from '../../lib/api';
+import { trpc } from '../../lib/trpc';
 import { ExerciseLibraryModal } from '../../components/workout/ExerciseLibraryModal';
 import { ExerciseConfigModal } from '../../components/workout/ExerciseConfigModal';
 import { WorkoutAssignmentModal } from '../../components/workout/WorkoutAssignmentModal';
@@ -58,6 +54,8 @@ export function WorkoutBuilderScreen({ templateId, onBack }: WorkoutBuilderScree
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [editingExerciseIndex, setEditingExerciseIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [savedTemplateId, setSavedTemplateId] = useState<number | undefined>(templateId);
   
   // Validation errors
   const [nameError, setNameError] = useState('');
@@ -72,28 +70,32 @@ export function WorkoutBuilderScreen({ templateId, onBack }: WorkoutBuilderScree
   const loadTemplate = async () => {
     if (!templateId || !user?.id) return;
     
+    setIsLoading(true);
     try {
-      const template = await getWorkoutTemplateById(templateId);
+      const templates = await trpc.workouts.listMyTemplates.query();
+      const template = templates.find((t: any) => t.id === templateId);
+      
       if (template) {
         setWorkoutName(template.name);
         setDescription(template.description || '');
         
         // Load exercises with their details
-        const exerciseDetails = await Promise.all(
-          template.exercises.map(async (we: any) => ({
-            exercise: we.exercise,
-            sets: we.sets,
-            reps: we.reps,
-            rest_time: we.rest_time,
-            order_index: we.order_index
-          }))
-        );
+        const exerciseDetails = template.exercises.map((we: any) => ({
+          exercise: we.exercise,
+          sets: we.sets,
+          reps: we.reps,
+          rest_time: we.rest_time,
+          order_index: we.order_index
+        }));
         
         setExercises(exerciseDetails.sort((a, b) => a.order_index - b.order_index));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading template:', error);
+      showError(error.message || 'Failed to load workout template');
       Alert.alert('Error', 'Failed to load workout template');
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -191,36 +193,45 @@ export function WorkoutBuilderScreen({ templateId, onBack }: WorkoutBuilderScree
     
     setIsSaving(true);
     try {
-      const workoutData = {
-        trainer_id: user.id,
-        name: workoutName.trim(),
-        description: description.trim() || undefined,
-        exercises: exercises.map((ex, index) => ({
-          exercise_id: ex.exercise.id,
-          order_index: index,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_time: ex.rest_time
-        }))
-      };
+      const exercisesData = exercises.map((ex, index) => ({
+        exercise_id: ex.exercise.id,
+        order_index: index,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest_time: ex.rest_time,
+        notes: undefined
+      }));
       
-      if (templateId) {
-        await updateWorkoutTemplate(templateId, user.id, workoutData);
+      if (savedTemplateId) {
+        // Update existing template
+        await trpc.workouts.updateTemplate.mutate({
+          template_id: savedTemplateId,
+          name: workoutName.trim(),
+          description: description.trim() || undefined,
+          exercises: exercisesData
+        });
         showSuccess('Workout template updated successfully');
         Alert.alert('Success', 'Workout template updated successfully', [
           { text: 'OK', onPress: onBack }
         ]);
       } else {
-        await createWorkoutTemplate(workoutData);
+        // Create new template
+        const result = await trpc.workouts.createTemplate.mutate({
+          name: workoutName.trim(),
+          description: description.trim() || undefined,
+          exercises: exercisesData
+        });
+        setSavedTemplateId(result.id);
         showSuccess('Workout template saved successfully');
         Alert.alert('Success', 'Workout template saved successfully', [
           { text: 'OK', onPress: onBack }
         ]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving template:', error);
-      showError('Failed to save workout template');
-      Alert.alert('Error', 'Failed to save workout template. Please try again.');
+      const errorMessage = error.message || 'Failed to save workout template';
+      showError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -230,32 +241,31 @@ export function WorkoutBuilderScreen({ templateId, onBack }: WorkoutBuilderScree
     if (!validateForm() || !user?.id) return;
     
     // If this is a new workout (not saved yet), save it first
-    if (!templateId) {
+    if (!savedTemplateId) {
       setIsSaving(true);
       try {
-        const workoutData = {
-          trainer_id: user.id,
+        const exercisesData = exercises.map((ex, index) => ({
+          exercise_id: ex.exercise.id,
+          order_index: index,
+          sets: ex.sets,
+          reps: ex.reps,
+          rest_time: ex.rest_time,
+          notes: undefined
+        }));
+        
+        const result = await trpc.workouts.createTemplate.mutate({
           name: workoutName.trim(),
           description: description.trim() || undefined,
-          exercises: exercises.map((ex, index) => ({
-            exercise_id: ex.exercise.id,
-            order_index: index,
-            sets: ex.sets,
-            reps: ex.reps,
-            rest_time: ex.rest_time
-          }))
-        };
+          exercises: exercisesData
+        });
         
-        const result = await createWorkoutTemplate(workoutData);
-        if (result.success) {
-          // Open assignment modal with the new template ID
-          setShowAssignmentModal(true);
-        } else {
-          Alert.alert('Error', 'Failed to save workout template. Please try again.');
-        }
-      } catch (error) {
+        setSavedTemplateId(result.id);
+        setShowAssignmentModal(true);
+      } catch (error: any) {
         console.error('Error saving template:', error);
-        Alert.alert('Error', 'Failed to save workout template. Please try again.');
+        const errorMessage = error.message || 'Failed to save workout template';
+        showError(errorMessage);
+        Alert.alert('Error', errorMessage);
       } finally {
         setIsSaving(false);
       }
@@ -631,15 +641,15 @@ export function WorkoutBuilderScreen({ templateId, onBack }: WorkoutBuilderScree
         />
       )}
       
-      {showAssignmentModal && user?.id && (
+      {showAssignmentModal && user?.id && savedTemplateId && (
         <WorkoutAssignmentModal
           visible={showAssignmentModal}
-          workoutTemplateId={templateId || 0}
+          workoutTemplateId={savedTemplateId}
           workoutTemplateName={workoutName}
           trainerId={user.id}
           onClose={() => setShowAssignmentModal(false)}
           onAssignSuccess={() => {
-            // Optionally navigate back or show success message
+            showSuccess('Workout assigned successfully');
             Alert.alert('Success', 'Workout assigned successfully');
           }}
         />

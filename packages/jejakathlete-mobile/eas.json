@@ -9,14 +9,16 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_TURSO_DATABASE_URL": "libsql://de-trainer-tartnenas.aws-ap-northeast-1.turso.io",
-        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ"
+        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ",
+        "EXPO_PUBLIC_WEB_URL": "http://192.168.3.1:3000"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_TURSO_DATABASE_URL": "libsql://de-trainer-tartnenas.aws-ap-northeast-1.turso.io",
-        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ"
+        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ",
+        "EXPO_PUBLIC_WEB_URL": "https://jejak-athlete.vercel.app"
       }
     },
     "production": {
@@ -26,7 +28,8 @@
       },
       "env": {
         "EXPO_PUBLIC_TURSO_DATABASE_URL": "libsql://de-trainer-tartnenas.aws-ap-northeast-1.turso.io",
-        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ"
+        "EXPO_PUBLIC_TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTUzNDc2OTYsImlkIjoiNjA3ZTViYjktZjE2Ny00Zjc4LTgxNDctYTU0ZjAwNTVjMDI2IiwicmlkIjoiZGMyZWJlNTgtYmFjYS00ZGEyLTllMDMtMGFjYTIzN2JkMzU1In0.q-rReTRnzuROhnpdgnEnmWQ84HfQi8OOu_2EpD_ntvCxWilANerm7aKRrNd0cCb7Rp7CS8UqNvB-NmPnRDr7BQ",
+        "EXPO_PUBLIC_WEB_URL": "https://jejak-athlete.vercel.app"
       }
     }
   },

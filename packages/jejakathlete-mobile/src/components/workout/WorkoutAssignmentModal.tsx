@@ -13,13 +13,12 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { createWorkoutAssignment } from '../../lib/api';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { Button } from '../ui/Button';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Athlete {
-  athlete_id: number;
+  athlete_id: string;
   athlete_name: string;
   athlete_email: string;
   sport: string;
@@ -30,7 +29,7 @@ interface WorkoutAssignmentModalProps {
   visible: boolean;
   workoutTemplateId: number;
   workoutTemplateName: string;
-  trainerId: number;
+  trainerId: string;
   onClose: () => void;
   onAssignSuccess: () => void;
 }
@@ -55,7 +54,7 @@ export function WorkoutAssignmentModal({
   
   // State
   const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [selectedAthleteIds, setSelectedAthleteIds] = useState<number[]>([]);
+  const [selectedAthleteIds, setSelectedAthleteIds] = useState<string[]>([]);
   const [scheduledDate, setScheduledDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,31 +74,28 @@ export function WorkoutAssignmentModal({
   const loadEnrolledAthletes = async () => {
     setIsLoading(true);
     try {
-      // Get only approved enrollments from Turso database
-      const enrollments = await tursoDbHelpers.all(`
-        SELECT 
-          e.athlete_id,
-          u.full_name as athlete_name,
-          u.email as athlete_email,
-          a.sport,
-          a.level
-        FROM enrollments e
-        JOIN users u ON e.athlete_id = u.id
-        JOIN athletes a ON a.user_id = u.id
-        WHERE e.trainer_id = ? AND e.status = 'approved'
-        ORDER BY u.full_name
-      `, [trainerId]);
+      // Get only approved enrollments via tRPC
+      const enrollments = await trpc.enrollments.listMyAthletes.query();
       
-      setAthletes(enrollments);
-    } catch (error) {
+      const athletesList = enrollments.map((enrollment: any) => ({
+        athlete_id: enrollment.athlete.id,
+        athlete_name: enrollment.athlete.full_name || 'Unknown',
+        athlete_email: enrollment.athlete.email || '',
+        sport: enrollment.athlete.athlete_data?.sport || '',
+        level: enrollment.athlete.athlete_data?.level || ''
+      }));
+      
+      setAthletes(athletesList);
+    } catch (error: any) {
       console.error('Error loading enrolled athletes:', error);
+      showError(error.message || 'Failed to load athletes');
       Alert.alert('Error', 'Failed to load athletes');
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleToggleAthlete = (athleteId: number) => {
+  const handleToggleAthlete = (athleteId: string) => {
     setSelectedAthleteIds((prev) => {
       if (prev.includes(athleteId)) {
         return prev.filter((id) => id !== athleteId);
@@ -149,36 +145,37 @@ export function WorkoutAssignmentModal({
     
     setIsAssigning(true);
     try {
-      const result = await createWorkoutAssignment({
-        workout_template_id: workoutTemplateId,
-        athlete_ids: selectedAthleteIds,
-        trainer_id: trainerId,
-        scheduled_date: scheduledDate.toISOString().split('T')[0]
-      });
+      // Assign workout to each selected athlete
+      const assignmentPromises = selectedAthleteIds.map((athleteId) =>
+        trpc.workouts.assignWorkout.mutate({
+          template_id: workoutTemplateId,
+          athlete_id: athleteId,
+          scheduled_date: scheduledDate.toISOString().split('T')[0]
+        })
+      );
       
-      if (result.success) {
-        showSuccess(result.message);
-        Alert.alert(
-          'Success',
-          result.message,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                onAssignSuccess();
-                onClose();
-              }
+      await Promise.all(assignmentPromises);
+      
+      const successMessage = `Workout assigned to ${selectedAthleteIds.length} athlete${selectedAthleteIds.length !== 1 ? 's' : ''} successfully`;
+      showSuccess(successMessage);
+      Alert.alert(
+        'Success',
+        successMessage,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              onAssignSuccess();
+              onClose();
             }
-          ]
-        );
-      } else {
-        showError(result.message);
-        Alert.alert('Error', result.message);
-      }
-    } catch (error) {
+          }
+        ]
+      );
+    } catch (error: any) {
       console.error('Error assigning workout:', error);
-      showError('Failed to assign workout');
-      Alert.alert('Error', 'Failed to assign workout. Please try again.');
+      const errorMessage = error.message || 'Failed to assign workout';
+      showError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsAssigning(false);
     }

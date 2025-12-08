@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Pressable, useWindowDimensions, ScrollView, RefreshControl } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
 import { AthleteBodyMetricsStats } from '../../components/athlete/AthleteBodyMetricsStats';
 
@@ -97,28 +97,42 @@ export function AthleteProgressScreen() {
     }
 
     try {
-      // Fetch all progress data using the athlete_progress view
-      const allProgress = await tursoDbHelpers.all(`
-        SELECT 
-          tr.id,
-          tr.test_id,
-          t.name as test_name,
-          fc.name as fitness_component,
-          t.unit,
-          t.improvement_direction,
-          tr.result_value,
-          tr.test_date,
-          tr.is_best_record,
-          ROW_NUMBER() OVER (
-            PARTITION BY tr.test_id 
-            ORDER BY tr.test_date DESC
-          ) as recent_rank
-        FROM test_results tr
-        JOIN tests t ON tr.test_id = t.id
-        JOIN fitness_components fc ON t.component_id = fc.id
-        WHERE tr.athlete_id = ? AND tr.result_value IS NOT NULL
-        ORDER BY tr.test_date DESC
-      `, [user.id]);
+      console.log('🔵 [AthleteProgressScreen] Fetching test results for athlete:', user.id);
+      
+      // Fetch all progress data using tRPC
+      const testResults = await trpc.testResults.getMyTestResults.query();
+      
+      console.log('✅ [AthleteProgressScreen] Received', testResults.length, 'test results');
+      
+      // Transform the data to match the expected format
+      const allProgress = testResults.map((result: any, index: number) => ({
+        id: result.id,
+        test_id: result.test_id,
+        test_name: result.test?.name || '',
+        fitness_component: result.test?.fitness_component?.name || '',
+        unit: result.test?.unit || '',
+        improvement_direction: result.test?.improvement_direction || 'higher',
+        result_value: result.result_value,
+        test_date: result.test_date,
+        is_best_record: result.is_best_record,
+        recent_rank: 1, // Will be calculated below
+      }));
+      
+      // Calculate recent_rank for each test
+      const testGroups = new Map<number, any[]>();
+      allProgress.forEach((item: any) => {
+        if (!testGroups.has(item.test_id)) {
+          testGroups.set(item.test_id, []);
+        }
+        testGroups.get(item.test_id)!.push(item);
+      });
+      
+      testGroups.forEach((items) => {
+        items.sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+        items.forEach((item, index) => {
+          item.recent_rank = index + 1;
+        });
+      });
 
       setProgressData(allProgress || []);
 
@@ -209,7 +223,7 @@ export function AthleteProgressScreen() {
       setChartData(testChartData);
 
     } catch (error) {
-      console.error('❌ Error fetching progress data:', error);
+      console.error('❌ [AthleteProgressScreen] Error fetching progress data:', error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -1006,7 +1020,7 @@ export function AthleteProgressScreen() {
               ) : (
                 /* Body Metrics Tab */
                 <AthleteBodyMetricsStats
-                  athleteId={user?.id || 0}
+                  athleteId={user?.id || ''}
                   athleteName={user?.full_name || 'Athlete'}
                 />
               )}

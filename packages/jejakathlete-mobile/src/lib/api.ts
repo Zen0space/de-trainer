@@ -1311,6 +1311,7 @@ export async function updateWorkoutAssignmentStatus(
 
 /**
  * Get workout assignments for an athlete
+ * @deprecated Use trpc.workouts.getMyWorkouts.query() instead
  */
 export async function getWorkoutAssignments(
   athleteId: number,
@@ -1320,6 +1321,7 @@ export async function getWorkoutAssignments(
     endDate?: string;
   }
 ): Promise<any[]> {
+  console.warn('⚠️ getWorkoutAssignments is deprecated. Use tRPC workouts.getMyWorkouts instead.');
   try {
     let query = `
       SELECT 

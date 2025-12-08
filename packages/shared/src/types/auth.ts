@@ -1,35 +1,15 @@
 // Authentication Type Definitions for JejakAthlete
 // Shared between web and mobile applications
 
+import type { User as DbUser, Trainer, Athlete } from './database';
+
+// Re-export database types used in auth
+export type { User, Trainer, Athlete } from './database';
+
 export type UserRole = 'athlete' | 'trainer' | 'admin' | 'rekabytes-admin';
 
-export interface User {
-  id: string;
-  email: string;
-  full_name: string | null;
-  username: string | null;
-  role: UserRole;
-  avatar_url: string | null;
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Trainer {
-  user_id: string;
-  trainer_code: string;
-  certification_id: string | null;
-  specialization: string | null;
-  verification_status: 'pending' | 'approved' | 'rejected';
-}
-
-export interface Athlete {
-  user_id: string;
-  sport: string;
-  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
-}
-
-export interface AuthUser extends User {
+// AuthUser extends User with optional role-specific data
+export interface AuthUser extends DbUser {
   trainer_data?: Trainer;
   athlete_data?: Athlete;
 }

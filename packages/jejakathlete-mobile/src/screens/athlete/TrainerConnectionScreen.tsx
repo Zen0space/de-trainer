@@ -4,7 +4,7 @@ import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { useKeyboardAware } from '../../hooks/useKeyboardAware';
 
 interface TrainerInfo {
@@ -68,53 +68,57 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
     }
 
     try {
-      // Get current trainer if enrolled
-      const trainer = await tursoDbHelpers.get(`
-        SELECT 
-          e.id as enrollment_id,
-          e.trainer_id,
-          u.full_name as trainer_name,
-          u.email as trainer_email,
-          t.trainer_code,
-          t.specialization,
-          t.certification_id,
-          e.status as enrollment_status,
-          e.responded_at as enrollment_date
-        FROM enrollments e
-        JOIN users u ON e.trainer_id = u.id
-        JOIN trainers t ON t.user_id = u.id
-        WHERE e.athlete_id = ? AND e.status IN ('approved', 'pending', 'viewing', 'accepting')
-        ORDER BY e.requested_at DESC
-        LIMIT 1
-      `, [user.id]);
+      console.log('🔵 [TrainerConnection] Fetching current enrollment...');
+      
+      // Get current trainer enrollment using tRPC
+      const enrollment = await trpc.enrollments.getCurrentEnrollment.query();
 
+      console.log('✅ [TrainerConnection] Enrollment data received:', {
+        hasEnrollment: !!enrollment,
+        status: enrollment?.status,
+      });
 
-      setCurrentTrainer(trainer);
+      if (enrollment) {
+        // Transform the enrollment data to match the expected format
+        const trainerDetails = Array.isArray(enrollment.trainer?.trainers) 
+          ? enrollment.trainer.trainers[0] 
+          : enrollment.trainer?.trainers;
+          
+        const trainerData: TrainerInfo = {
+          enrollment_id: enrollment.id,
+          trainer_id: enrollment.trainer_id,
+          trainer_name: enrollment.trainer?.full_name || '',
+          trainer_email: '', // Email not available in public.users table
+          trainer_code: trainerDetails?.trainer_code || '',
+          specialization: trainerDetails?.specialization || null,
+          certification_id: trainerDetails?.certification_id || null,
+          enrollment_status: enrollment.status,
+          enrollment_date: enrollment.responded_at || enrollment.requested_at,
+        };
+        setCurrentTrainer(trainerData);
+      } else {
+        setCurrentTrainer(null);
+      }
 
-      // If no current trainer, fetch available trainers
-      if (!trainer || trainer.enrollment_status !== 'approved') {
-        const trainers = await tursoDbHelpers.all(`
-          SELECT 
-            u.id,
-            u.full_name,
-            u.email,
-            t.trainer_code,
-            t.specialization,
-            t.certification_id
-          FROM users u
-          JOIN trainers t ON u.id = t.user_id
-          WHERE u.role = 'trainer' AND t.verification_status = 'approved'
-          ORDER BY u.full_name
-          LIMIT 20
-        `, []);
-
-
+      // If no current trainer or not approved, fetch available trainers
+      if (!enrollment || enrollment.status !== 'approved') {
+        console.log('🔵 [TrainerConnection] Fetching available trainers...');
+        const trainers = await trpc.enrollments.listAvailableTrainers.query({ limit: 20 });
+        console.log('✅ [TrainerConnection] Available trainers received:', trainers.length);
         setAvailableTrainers(trainers || []);
       }
 
-    } catch (error) {
-      console.error('❌ Error fetching trainer data:', error);
-      Alert.alert('Error', 'Failed to load trainer information. Please try again.');
+    } catch (error: any) {
+      console.error('❌ [TrainerConnection] Error fetching trainer data:', {
+        message: error?.message,
+        code: error?.code,
+        cause: error?.cause,
+      });
+      Alert.alert(
+        'Connection Error', 
+        'Failed to load trainer information. Please check your internet connection and try again.\n\n' +
+        `Error: ${error?.message || 'Unknown error'}`
+      );
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -141,49 +145,14 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
     setSearchResults([]);
     
     try {
-      let trainers: AvailableTrainer[] = [];
-      
-      if (searchMode === 'code') {
-        // Search by trainer code (exact match)
-        const trainer = await tursoDbHelpers.get(`
-          SELECT 
-            u.id,
-            u.full_name,
-            u.email,
-            t.trainer_code,
-            t.specialization,
-            t.certification_id
-          FROM users u
-          JOIN trainers t ON u.id = t.user_id
-          WHERE t.trainer_code = ? AND u.role = 'trainer' AND t.verification_status = 'approved'
-        `, [query.trim().toUpperCase()]);
-        
-        if (trainer) {
-          trainers = [trainer];
-        }
-      } else {
-        // Search by trainer name (partial match)
-        const results = await tursoDbHelpers.all(`
-          SELECT 
-            u.id,
-            u.full_name,
-            u.email,
-            t.trainer_code,
-            t.specialization,
-            t.certification_id
-          FROM users u
-          JOIN trainers t ON u.id = t.user_id
-          WHERE u.full_name LIKE ? AND u.role = 'trainer' AND t.verification_status = 'approved'
-          ORDER BY u.full_name
-          LIMIT 10
-        `, [`%${query.trim()}%`]);
-        
-        trainers = results || [];
-      }
+      // Use tRPC to search trainers
+      const trainers = await trpc.enrollments.searchTrainers.query({
+        searchMode,
+        query: query.trim(),
+      });
 
       if (trainers.length > 0) {
         setSearchResults(trainers);
-
       } else {
         Alert.alert(
           'No Results', 
@@ -215,128 +184,18 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
 
     setIsEnrolling(true);
     try {
-      // Get trainer information for the request
-      const trainerInfo = await tursoDbHelpers.get(`
-        SELECT u.full_name, u.email, t.trainer_code, t.specialization
-        FROM users u
-        JOIN trainers t ON u.id = t.user_id
-        WHERE u.id = ? AND u.role = 'trainer'
-      `, [trainerId]);
-
-      if (!trainerInfo) {
-        Alert.alert('Error', 'Trainer not found. Please try again.');
-        return;
-      }
-
-      // Check for existing enrollment with comprehensive status checking
-      const existingEnrollment = await tursoDbHelpers.get(`
-        SELECT id, status, requested_at, viewed_at, accepting_at, responded_at
-        FROM enrollments 
-        WHERE athlete_id = ? AND trainer_id = ?
-        ORDER BY requested_at DESC
-        LIMIT 1
-      `, [user.id, trainerId]);
-
-      // Handle existing enrollment statuses
-      if (existingEnrollment) {
-        const { status } = existingEnrollment;
-        
-        switch (status) {
-          case 'approved':
-            Alert.alert('Already Enrolled', 'You are already enrolled with this trainer.');
-            return;
-            
-          case 'pending':
-            Alert.alert(
-              'Request Pending', 
-              'You already have a pending enrollment request with this trainer. Please wait for their response.'
-            );
-            return;
-            
-          case 'viewing':
-            Alert.alert(
-              'Request Being Reviewed', 
-              'Your trainer is currently reviewing your enrollment request. You will be notified once they make a decision.'
-            );
-            return;
-            
-          case 'accepting':
-            Alert.alert(
-              'Request Being Processed', 
-              'Your trainer is processing your enrollment request. This should be completed shortly.'
-            );
-            return;
-            
-          case 'rejected':
-            // Reuse existing record after rejection
-            Alert.alert(
-              'Previous Request Rejected',
-              'Your previous request was rejected. You can send a new enrollment request.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Send New Request', 
-                  onPress: () => updateExistingEnrollmentRequest(existingEnrollment.id, trainerInfo)
-                }
-              ]
-            );
-            return;
-            
-          case 'cancelled':
-            // Reuse existing record after cancellation
-            Alert.alert(
-              'Send New Request?',
-              'You previously cancelled a request with this trainer. Would you like to send a new enrollment request?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Send Request', 
-                  onPress: () => updateExistingEnrollmentRequest(existingEnrollment.id, trainerInfo)
-                }
-              ]
-            );
-            return;
-        }
-      }
-
-      // Create new enrollment request
-      await createNewEnrollmentRequest(trainerId, trainerInfo);
-
-    } catch (error) {
-      console.error('❌ Error processing enrollment request:', error);
-      Alert.alert('Error', 'Failed to process enrollment request. Please try again.');
-    } finally {
-      setIsEnrolling(false);
-    }
-  };
-
-  // Helper function to create new enrollment request
-  const createNewEnrollmentRequest = async (trainerId: number, trainerInfo: any) => {
-    try {
-      // Insert new enrollment request with pending status
-      const result = await tursoDbHelpers.run(`
-        INSERT INTO enrollments (
-          athlete_id, 
-          trainer_id, 
-          status, 
-          requested_at,
-          notes
-        ) VALUES (?, ?, 'pending', datetime('now'), ?)
-      `, [
-        user?.id, 
-        trainerId, 
-        `Enrollment request from ${user?.full_name || 'athlete'} for ${trainerInfo.trainer_code}`
-      ]);
-
-
+      // Use tRPC to request enrollment
+      const result = await trpc.enrollments.requestEnrollmentById.mutate({
+        trainer_id: trainerId,
+      });
 
       // Show success message with trainer details
       Alert.alert(
         'Request Sent Successfully! 🎉',
         `Your enrollment request has been sent to:\n\n` +
-        `👨‍🏫 ${trainerInfo.full_name} (${trainerInfo.trainer_code})\n` +
-        `📧 ${trainerInfo.email}\n` +
-        `🎯 ${trainerInfo.specialization || 'General Training'}\n\n` +
+        `👨‍🏫 ${result.trainer.full_name} (${result.trainer.trainer_code})\n` +
+        `📧 ${result.trainer.email}\n` +
+        `🎯 ${result.trainer.specialization || 'General Training'}\n\n` +
         `You will be notified when they respond to your request.`,
         [{ 
           text: 'OK', 
@@ -345,60 +204,28 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
             setSearchQuery('');
             setSearchResults([]);
             setShowTrainerSearch(false);
-            fetchTrainerData(); // Refresh the data
-          }
-        }]
-      );
-
-    } catch (error) {
-      console.error('❌ Error creating enrollment request:', error);
-      Alert.alert('Error', 'Failed to send enrollment request. Please try again.');
-      throw error;
-    }
-  };
-
-  // Helper function to update existing enrollment request
-  const updateExistingEnrollmentRequest = async (enrollmentId: number, trainerInfo: any) => {
-    try {
-      // Update existing enrollment request to pending status
-      const result = await tursoDbHelpers.run(`
-        UPDATE enrollments 
-        SET status = 'pending', 
-            requested_at = datetime('now'),
-            responded_at = NULL,
-            viewed_at = NULL,
-            accepting_at = NULL,
-            notes = ?
-        WHERE id = ?
-      `, [
-        `Enrollment request from ${user?.full_name || 'athlete'} for ${trainerInfo.trainer_code}`,
-        enrollmentId
-      ]);
-
-
-
-      // Show success message with trainer details
-      Alert.alert(
-        'Request Sent Successfully! 🎉',
-        `Your enrollment request has been sent to:\n\n` +
-        `👨‍🏫 ${trainerInfo.full_name} (${trainerInfo.trainer_code})\n` +
-        `📧 ${trainerInfo.email}\n` +
-        `🎯 ${trainerInfo.specialization || 'General Training'}\n\n` +
-        `You will be notified when they respond to your request.`,
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-
             fetchTrainerData();
           }
         }]
       );
 
-    } catch (error) {
-      console.error('❌ Error updating enrollment request:', error);
-      Alert.alert('Error', 'Failed to send enrollment request. Please try again.');
+    } catch (error: any) {
+      console.error('❌ Error processing enrollment request:', error);
+      
+      // Handle specific error messages from tRPC
+      const errorMessage = error?.message || 'Failed to process enrollment request. Please try again.';
+      
+      if (errorMessage.includes('already enrolled') || errorMessage.includes('pending enrollment')) {
+        Alert.alert('Cannot Send Request', errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setIsEnrolling(false);
     }
   };
+
+
 
   // Handle unenrollment
   const handleUnenrollment = () => {
@@ -414,11 +241,9 @@ export function TrainerConnectionScreen({ onBack }: { onBack: () => void }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await tursoDbHelpers.run(`
-                UPDATE enrollments 
-                SET status = 'cancelled', responded_at = datetime('now')
-                WHERE id = ?
-              `, [currentTrainer.enrollment_id]);
+              await trpc.enrollments.cancelEnrollment.mutate({
+                enrollment_id: currentTrainer.enrollment_id,
+              });
 
               Alert.alert('Unenrolled', 'You have been unenrolled from your trainer.', [
                 { text: 'OK', onPress: () => fetchTrainerData() }

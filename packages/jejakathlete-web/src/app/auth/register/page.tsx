@@ -34,6 +34,7 @@ function RegisterContent() {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [manualRedirectUrl, setManualRedirectUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,21 +91,47 @@ function RegisterContent() {
         return;
       }
 
-      if (authData.user && authData.session) {
-        // If mobile redirect requested, redirect with tokens
-        if (redirectTo) {
-          const mobileUrl = `${redirectTo}?access_token=${authData.session.access_token}&refresh_token=${authData.session.refresh_token}`;
-          window.location.href = mobileUrl;
+      if (authData.user) {
+        // Profile is automatically created by database trigger
+        
+        // If session exists and mobile redirect requested
+        if (authData.session && redirectTo) {
+          const mobileUrl = `${redirectTo}?access_token=${authData.session.access_token}&refresh_token=${authData.session.refresh_token}&expires_in=${authData.session.expires_in}`;
+          
+          // Try multiple redirect methods for better compatibility
+          try {
+            // Store URL for manual redirect button
+            setManualRedirectUrl(mobileUrl);
+            
+            // Method 1: Direct window.location (most reliable for deep links)
+            window.location.href = mobileUrl;
+            
+            // Method 2: Fallback with timeout
+            setTimeout(() => {
+              window.location.replace(mobileUrl);
+            }, 100);
+            
+            // Method 3: Show manual redirect button after 2 seconds
+            setTimeout(() => {
+              setIsLoading(false);
+            }, 2000);
+          } catch (redirectError) {
+            console.error('[Register] Redirect error:', redirectError);
+            setIsLoading(false);
+          }
           return;
         }
         
-        router.push('/auth/success?type=signup');
-      } else {
-        // Email confirmation required
-        router.push('/auth/success?type=signup&confirm=email');
+        if (authData.session) {
+          router.push('/auth/success?type=signup');
+        } else {
+          // Email confirmation required
+          router.push('/auth/success?type=signup&confirm=email');
+        }
       }
-    } catch {
-      setError('An unexpected error occurred');
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('An unexpected error occurred: ' + String(err));
       setIsLoading(false);
     }
   };
@@ -137,6 +164,18 @@ function RegisterContent() {
         {error && (
           <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
             {error}
+          </div>
+        )}
+        
+        {manualRedirectUrl && (
+          <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+            <p className="text-green-400 text-sm mb-3">Registration successful! Tap the button below to return to the app:</p>
+            <a
+              href={manualRedirectUrl}
+              className="block w-full py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl text-center transition-colors"
+            >
+              Return to JejakAthlete App
+            </a>
           </div>
         )}
 

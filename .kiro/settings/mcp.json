@@ -4,7 +4,9 @@
       "name": "Always use sequential thinking",
       "description": "Use sequential thinking MCP server for all complex reasoning tasks",
       "pattern": ".*",
-      "servers": ["sequential-thinking"],
+      "servers": [
+        "sequential-thinking"
+      ],
       "priority": 1
     }
   ],
@@ -20,7 +22,8 @@
         "think",
         "analyze",
         "reason",
-        "plan"
+        "plan",
+        "sequentialthinking"
       ]
     },
     "mcp-turso-cloud": {
@@ -40,6 +43,14 @@
         "execute_query",
         "list_tables",
         "describe_table"
+      ]
+    },
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp",
+      "autoApprove": [
+        "list_tables",
+        "apply_migration",
+        "list_projects"
       ]
     }
   }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable, useWindowDimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSession } from '../../contexts/AuthContext';
-import { getWorkoutAssignments } from '../../lib/api';
+import { trpc } from '../../lib/trpc';
 import { TabView } from '../../components/ui/TabView';
 
 interface WorkoutAssignment {
@@ -56,36 +56,57 @@ export function WorkoutListScreen({ onWorkoutPress }: WorkoutListScreenProps) {
     }
 
     try {
+      console.log('🔵 [WorkoutListScreen] Fetching workouts for tab:', activeTab);
+
+      // Fetch all workouts using tRPC
+      const allWorkouts = await trpc.workouts.getMyWorkouts.query();
+
+      console.log('✅ [WorkoutListScreen] Received workouts:', allWorkouts.length);
+
       // Get today's date for filtering
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
 
-      let assignments: WorkoutAssignment[] = [];
+      let filteredWorkouts: any[] = [];
 
       if (activeTab === 'upcoming') {
-        // Get pending and in_progress workouts scheduled for today or future
-        assignments = await getWorkoutAssignments(user.id, {
-          startDate: todayStr
+        // Filter to only show pending and in_progress workouts scheduled for today or future
+        filteredWorkouts = allWorkouts.filter((w: any) => {
+          const scheduledDate = new Date(w.scheduled_date);
+          scheduledDate.setHours(0, 0, 0, 0);
+          return (
+            (w.status === 'pending' || w.status === 'in_progress') &&
+            scheduledDate >= today
+          );
         });
-        
-        // Filter to only show pending and in_progress
-        assignments = assignments.filter(
-          w => w.status === 'pending' || w.status === 'in_progress'
-        );
       } else {
-        // Get completed and skipped workouts
-        assignments = await getWorkoutAssignments(user.id);
-        
-        // Filter to only show completed and skipped
-        assignments = assignments.filter(
-          w => w.status === 'completed' || w.status === 'skipped'
+        // Filter to only show completed and skipped workouts
+        filteredWorkouts = allWorkouts.filter(
+          (w: any) => w.status === 'completed' || w.status === 'skipped'
         );
       }
 
-      setWorkouts(assignments);
-    } catch (error) {
-      console.error('❌ Error fetching workouts:', error);
+      // Transform to match expected format
+      const transformedWorkouts = filteredWorkouts.map((w: any) => ({
+        id: w.id,
+        workout_template_id: w.workout_template_id,
+        athlete_id: w.athlete_id,
+        trainer_id: w.trainer_id,
+        scheduled_date: w.scheduled_date,
+        status: w.status,
+        started_at: w.started_at,
+        completed_at: w.completed_at,
+        workout_name: w.workout_template?.name || 'Unnamed Workout',
+        workout_description: w.workout_template?.description,
+        trainer_name: w.trainer?.full_name || 'Unknown Trainer',
+      }));
+
+      setWorkouts(transformedWorkouts);
+    } catch (error: any) {
+      console.error('❌ [WorkoutListScreen] Error fetching workouts:', {
+        message: error?.message,
+        code: error?.code,
+      });
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

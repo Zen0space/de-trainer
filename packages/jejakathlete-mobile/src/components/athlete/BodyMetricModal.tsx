@@ -14,7 +14,21 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { BodyMetric, calculateBMI, getBMICategory } from '../../lib/body-metrics-api';
+import { calculateBMI, getBMICategory } from '../../lib/body-metrics-api';
+
+interface BodyMetric {
+  id: number;
+  athlete_id: string;
+  measurement_date: string;
+  weight: number | null;
+  height: number | null;
+  muscle_mass: number | null;
+  body_fat_percentage: number | null;
+  bmi: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 interface BodyMetricModalProps {
   visible: boolean;

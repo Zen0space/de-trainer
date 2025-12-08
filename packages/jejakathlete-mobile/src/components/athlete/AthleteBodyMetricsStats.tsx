@@ -2,20 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, useWindowDimensions, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { VictoryChart, VictoryLine, VictoryScatter, VictoryAxis, VictoryTheme } from 'victory-native';
-import {
-  BodyMetric,
-  getAthleteBodyMetrics,
-  getBodyMetricsStats,
-  createBodyMetric,
-  updateBodyMetric,
-  deleteBodyMetric,
-  getBMICategory
-} from '../../lib/body-metrics-api';
+import { trpc } from '../../lib/trpc';
+import { getBMICategory, calculateBMI } from '../../lib/body-metrics-api';
 import { BodyMetricModal } from './BodyMetricModal';
 import { useToast } from '../../contexts/ToastContext';
 
+interface BodyMetric {
+  id: number;
+  athlete_id: string;
+  measurement_date: string;
+  weight: number | null;
+  height: number | null;
+  muscle_mass: number | null;
+  body_fat_percentage: number | null;
+  bmi: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AthleteBodyMetricsStatsProps {
-  athleteId: number;
+  athleteId: string; // Changed from number to string (UUID)
   athleteName: string;
 }
 
@@ -43,12 +50,20 @@ export function AthleteBodyMetricsStats({ athleteId, athleteName }: AthleteBodyM
   const fetchMetrics = async () => {
     setIsLoading(true);
     try {
-      const [metricsData, statsData] = await Promise.all([
-        getAthleteBodyMetrics(athleteId),
-        getBodyMetricsStats(athleteId)
-      ]);
+      const metricsData = await trpc.bodyMetrics.getMyMetrics.query();
       setMetrics(metricsData);
-      setStats(statsData);
+      
+      // Calculate stats from metrics data
+      if (metricsData.length >= 2) {
+        const latest = metricsData[0];
+        const previous = metricsData[1];
+        const weightChange = latest.weight && previous.weight 
+          ? Number((latest.weight - previous.weight).toFixed(1))
+          : null;
+        setStats({ weightChange });
+      } else {
+        setStats({ weightChange: null });
+      }
     } catch (error) {
       console.error('Error fetching body metrics:', error);
       showError('Failed to load body metrics');
@@ -70,27 +85,36 @@ export function AthleteBodyMetricsStats({ athleteId, athleteName }: AthleteBodyM
   const handleSaveMetric = async (data: any) => {
     try {
       if (editingMetric) {
-        const result = await updateBodyMetric(editingMetric.id, data);
-        if (result.success) {
-          showSuccess(result.message);
-          fetchMetrics();
-        } else {
-          showError(result.message);
+        // Calculate BMI if weight and height are provided
+        let bmi = data.bmi;
+        if (data.weight && data.height && !bmi) {
+          bmi = calculateBMI(data.weight, data.height);
         }
-      } else {
-        const result = await createBodyMetric({
-          athlete_id: athleteId,
-          ...data
+        
+        await trpc.bodyMetrics.updateMetrics.mutate({
+          id: editingMetric.id,
+          ...data,
+          bmi,
         });
-        if (result.success) {
-          showSuccess(result.message);
-          fetchMetrics();
-        } else {
-          showError(result.message);
+        showSuccess('Body metrics updated successfully');
+        fetchMetrics();
+      } else {
+        // Calculate BMI if weight and height are provided
+        let bmi = data.bmi;
+        if (data.weight && data.height && !bmi) {
+          bmi = calculateBMI(data.weight, data.height);
         }
+        
+        await trpc.bodyMetrics.recordMetrics.mutate({
+          ...data,
+          bmi,
+        });
+        showSuccess('Body metrics recorded successfully');
+        fetchMetrics();
       }
-    } catch (error) {
-      showError('Failed to save body metrics');
+    } catch (error: any) {
+      console.error('Error saving body metrics:', error);
+      showError(error?.message || 'Failed to save body metrics');
     }
   };
 
@@ -104,12 +128,16 @@ export function AthleteBodyMetricsStats({ athleteId, athleteName }: AthleteBodyM
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const result = await deleteBodyMetric(metric.id);
-            if (result.success) {
-              showSuccess(result.message);
-              fetchMetrics();
-            } else {
-              showError(result.message);
+            try {
+              // Note: Delete functionality not yet implemented in tRPC router
+              // This would need to be added to the bodyMetrics router
+              showError('Delete functionality coming soon');
+              // await trpc.bodyMetrics.deleteMetrics.mutate({ id: metric.id });
+              // showSuccess('Measurement deleted successfully');
+              // fetchMetrics();
+            } catch (error: any) {
+              console.error('Error deleting body metrics:', error);
+              showError(error?.message || 'Failed to delete measurement');
             }
           }
         }

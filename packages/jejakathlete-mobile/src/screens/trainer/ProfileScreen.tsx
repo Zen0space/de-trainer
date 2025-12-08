@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, RefreshControl, TextInput } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { useStableTextInput } from '../../hooks/useStableTextInput';
 
 // Stable EditField component using uncontrolled inputs to prevent keyboard dismissal
@@ -199,36 +199,30 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
     }
 
     try {
-      // Query to get user and trainer information
-      const profileData = await tursoDbHelpers.get(`
-        SELECT 
-          u.id,
-          u.username,
-          u.email,
-          u.full_name,
-          u.role,
-          u.created_at,
-          u.is_verified,
-          t.user_id,
-          t.trainer_code,
-          t.certification_id,
-          t.specialization,
-          t.verification_status
-        FROM users u
-        LEFT JOIN trainers t ON u.id = t.user_id
-        WHERE u.id = ? AND u.role = 'trainer'
-      `, [user.id]);
+      // Use tRPC to get profile
+      const profileData = await trpc.profiles.getProfile.query();
 
-
-
-      if (profileData) {
-        setProfile(profileData);
+      if (profileData && profileData.trainer_data) {
+        setProfile({
+          id: profileData.id as any,
+          username: profileData.username || '',
+          email: user.email || '',
+          full_name: profileData.full_name || '',
+          role: profileData.role,
+          created_at: profileData.created_at,
+          is_verified: profileData.is_verified,
+          user_id: profileData.trainer_data.user_id as any,
+          trainer_code: profileData.trainer_data.trainer_code,
+          certification_id: profileData.trainer_data.certification_id,
+          specialization: profileData.trainer_data.specialization,
+          verification_status: profileData.trainer_data.verification_status,
+        });
       } else {
-        Alert.alert('Error', 'Profile not found or you are not a trainer.');
+        Alert.alert('Error', 'Trainer profile not found. Please complete your registration.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to load profile. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -320,27 +314,29 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
 
     setIsUpdating(true);
     try {
-      // Update user information
-      await tursoDbHelpers.run(`
-        UPDATE users 
-        SET full_name = ?, email = ? 
-        WHERE id = ?
-      `, [currentValues.full_name, currentValues.email, profile.id]);
+      // Update profile using tRPC
+      await trpc.profiles.updateProfile.mutate({
+        full_name: currentValues.full_name,
+        certification_id: currentValues.certification_id || undefined,
+        specialization: currentValues.specialization || undefined,
+      });
 
-      // Update trainer information
-      await tursoDbHelpers.run(`
-        UPDATE trainers 
-        SET certification_id = ?, specialization = ? 
-        WHERE user_id = ?
-      `, [currentValues.certification_id || null, currentValues.specialization || null, profile.id]);
+      // Note: Email update is not supported in this version
+      // as it requires additional verification flow
+      if (currentValues.email !== profile.email) {
+        Alert.alert(
+          'Note',
+          'Email update requires verification. Please update your email through the settings page.'
+        );
+      }
 
       // Refresh profile data
       await fetchProfile();
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to update profile. Please try again.');
     } finally {
       setIsUpdating(false);
     }

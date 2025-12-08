@@ -1,29 +1,16 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# OSX
+#
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Android/IntelliJ
+#
+build/
+.idea
+.gradle
 local.properties
+*.iml
+*.hprof
+.cxx/
 
-# ProGuard/R8 mapping files - DO NOT COMMIT
-# These are needed to deobfuscate crashes but should be stored separately
-app/build/outputs/mapping/
-**/mapping.txt
-
-# Keystore files - DO NOT COMMIT
-*.jks
-*.keystore
-!debug.keystore
-
-# Service account keys - DO NOT COMMIT
-service-account-key.json
-google-services.json
+# Bundle artifacts
+*.jsbundle

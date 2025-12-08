@@ -1,5 +1,6 @@
 // Types
 export * from './types/auth';
+export * from './types/database';
 
 // Validators (schemas only, not types - to avoid duplicate exports)
 export {

@@ -187,6 +187,37 @@ expo build:ios
 expo build:web
 ```
 
+## Local Development Testing
+
+For testing the OAuth flow locally:
+
+1. Start web server and note the Network IP:
+```bash
+cd packages/jejakathlete-web
+npm run dev
+# Note: "Network: http://192.168.3.1:3000"
+```
+
+2. Update `.env` with that IP:
+```env
+EXPO_PUBLIC_WEB_URL=http://192.168.3.1:3000
+```
+
+3. Start mobile app:
+```bash
+npm start
+```
+
+See [LOCAL_DEVELOPMENT_TESTING.md](./LOCAL_DEVELOPMENT_TESTING.md) for details.
+
+## Deep Link Configuration
+
+Configured for OAuth callbacks:
+- Custom scheme: `jejakathlete://`
+- Universal link: `https://jejak-athlete.vercel.app`
+
+See [DEEP_LINK_TESTING.md](./DEEP_LINK_TESTING.md) for testing.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -194,12 +225,14 @@ expo build:web
 1. **Metro bundler issues**: Clear cache with `npx expo start --clear`
 2. **TypeScript errors**: Ensure all type definitions are properly imported
 3. **NativeWind not working**: Verify babel.config.js includes the NativeWind plugin
+4. **Deep links not working**: Run `node scripts/verify-deep-link-config.js` to verify configuration
 
 ### Helpful Commands
 
 - Clear Expo cache: `npx expo start --clear`
 - Reset Metro cache: `npx expo start --reset-cache`
 - Type check: `npx tsc --noEmit`
+- Verify deep links: `node scripts/verify-deep-link-config.js`
 
 ## License
 

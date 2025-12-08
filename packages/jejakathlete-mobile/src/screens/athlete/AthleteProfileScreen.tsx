@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, Pressable, useWindowDimensions, Alert, ScrollView, RefreshControl, TextInput } from 'react-native';
 import { useSession } from '../../contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
-import { tursoDbHelpers } from '../../lib/turso-database';
+import { trpc } from '../../lib/trpc';
 import { useStableTextInput } from '../../hooks/useStableTextInput';
 
 // Stable EditField component using uncontrolled inputs to prevent keyboard dismissal
@@ -206,53 +206,45 @@ export function AthleteProfileScreen({ onBack }: { onBack: () => void }) {
     }
 
     try {
-      // Query to get user and athlete information
-      const profileData = await tursoDbHelpers.get(`
-        SELECT 
-          u.id,
-          u.username,
-          u.email,
-          u.full_name,
-          u.role,
-          u.created_at,
-          u.is_verified,
-          a.user_id,
-          a.sport,
-          a.level
-        FROM users u
-        LEFT JOIN athletes a ON u.id = a.user_id
-        WHERE u.id = ? AND u.role = 'athlete'
-      `, [user.id]);
+      // Use tRPC to get profile
+      const profileData = await trpc.profiles.getProfile.query();
 
-
-
-      if (profileData) {
-        setProfile(profileData);
+      if (profileData && profileData.athlete_data) {
+        setProfile({
+          id: profileData.id as any,
+          username: profileData.username || '',
+          email: user.email || '',
+          full_name: profileData.full_name || '',
+          role: profileData.role,
+          created_at: profileData.created_at,
+          is_verified: profileData.is_verified,
+          user_id: profileData.athlete_data.user_id as any,
+          sport: profileData.athlete_data.sport,
+          level: profileData.athlete_data.level,
+        });
       } else {
-        Alert.alert('Error', 'Profile not found or you are not an athlete.');
+        Alert.alert('Error', 'Athlete profile not found. Please complete your registration.');
       }
 
-      // Get trainer information if enrolled
-      const trainer = await tursoDbHelpers.get(`
-        SELECT 
-          u.full_name as trainer_name,
-          u.email as trainer_email,
-          t.trainer_code,
-          e.status as enrollment_status,
-          e.responded_at as enrollment_date
-        FROM enrollments e
-        JOIN users u ON e.trainer_id = u.id
-        JOIN trainers t ON t.user_id = u.id
-        WHERE e.athlete_id = ? AND e.status = 'approved'
-        LIMIT 1
-      `, [user.id]);
+      // Get trainer information if enrolled using tRPC
+      const trainers = await trpc.enrollments.listMyTrainers.query();
+      
+      if (trainers && trainers.length > 0) {
+        const enrollment = trainers[0];
+        setTrainerInfo({
+          trainer_name: enrollment.trainer?.full_name || '',
+          trainer_email: '', // Email not included in enrollment response for privacy
+          trainer_code: '', // Trainer code not included in enrollment response
+          enrollment_status: enrollment.status,
+          enrollment_date: enrollment.responded_at || enrollment.requested_at,
+        });
+      } else {
+        setTrainerInfo(null);
+      }
 
-
-      setTrainerInfo(trainer);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to load profile. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -360,27 +352,29 @@ export function AthleteProfileScreen({ onBack }: { onBack: () => void }) {
 
     setIsUpdating(true);
     try {
-      // Update user information
-      await tursoDbHelpers.run(`
-        UPDATE users 
-        SET full_name = ?, email = ? 
-        WHERE id = ?
-      `, [currentValues.full_name, currentValues.email, profile.id]);
+      // Update profile using tRPC
+      await trpc.profiles.updateProfile.mutate({
+        full_name: currentValues.full_name,
+        sport: currentValues.sport,
+        level: currentValues.level as 'beginner' | 'intermediate' | 'advanced' | 'elite',
+      });
 
-      // Update athlete information
-      await tursoDbHelpers.run(`
-        UPDATE athletes 
-        SET sport = ?, level = ? 
-        WHERE user_id = ?
-      `, [currentValues.sport, currentValues.level, profile.id]);
+      // Note: Email update is not supported in this version
+      // as it requires additional verification flow
+      if (currentValues.email !== profile.email) {
+        Alert.alert(
+          'Note',
+          'Email update requires verification. Please update your email through the settings page.'
+        );
+      }
 
       // Refresh profile data
       await fetchProfile();
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to update profile. Please try again.');
     } finally {
       setIsUpdating(false);
     }
