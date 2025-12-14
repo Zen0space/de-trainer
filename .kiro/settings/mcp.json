@@ -50,7 +50,8 @@
       "autoApprove": [
         "list_tables",
         "apply_migration",
-        "list_projects"
+        "list_projects",
+        "search_docs"
       ]
     }
   }

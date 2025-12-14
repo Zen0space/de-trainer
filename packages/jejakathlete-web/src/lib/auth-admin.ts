@@ -14,16 +14,27 @@ export async function requireAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
       },
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     redirect('/');
   }
 
@@ -31,17 +42,15 @@ export async function requireAdmin() {
   const { data: userData, error } = await supabase
     .from('users')
     .select('role, id, full_name, username, email')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   if (error || userData?.role !== 'admin') {
-    await supabase.auth.signOut();
     redirect('/');
   }
 
   return {
     user: userData,
-    session,
     supabase,
   };
 }
@@ -58,23 +67,34 @@ export async function getAdminUser() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
       },
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return null;
   }
 
   const { data: userData, error } = await supabase
     .from('users')
     .select('role, id, full_name, username, email')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   if (error || userData?.role !== 'admin') {

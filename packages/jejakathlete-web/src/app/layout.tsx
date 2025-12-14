@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { TRPCProvider } from '@/lib/trpc-provider';
 
 export const metadata: Metadata = {
   title: 'JejakAthlete',
@@ -22,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen bg-bg-primary text-text-primary">
-        {children}
+        <TRPCProvider>{children}</TRPCProvider>
       </body>
     </html>
   );

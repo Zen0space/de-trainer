@@ -8,6 +8,7 @@ import { workoutsRouter } from './routers/workouts';
 import { eventsRouter } from './routers/events';
 import { notificationsRouter } from './routers/notifications';
 import { dashboardRouter } from './routers/dashboard';
+import { adminRouter } from './routers/admin';
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   events: eventsRouter,
   notifications: notificationsRouter,
   dashboard: dashboardRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

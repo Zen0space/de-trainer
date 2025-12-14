@@ -21,6 +21,25 @@ function AdminRegisterContent() {
   const [isValidated, setIsValidated] = useState(false);
 
   useEffect(() => {
+    // Check if already logged in as admin
+    const checkExistingSession = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userData?.role === 'admin') {
+          router.push('/admin/dashboard');
+          return;
+        }
+      }
+    };
+
     // Validate access key
     const validateKey = async () => {
       if (!accessKey) {
@@ -46,8 +65,9 @@ function AdminRegisterContent() {
       }
     };
 
+    checkExistingSession();
     validateKey();
-  }, [accessKey]);
+  }, [accessKey, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,9 +113,33 @@ function AdminRegisterContent() {
       }
 
       if (authData.user) {
+        console.log('[Admin Register] User created:', authData.user.id);
+        console.log('[Admin Register] Session:', authData.session);
+        
+        // If email confirmation is disabled, we'll have a session immediately
         if (authData.session) {
-          router.push('/admin/dashboard');
+          // Verify admin role was set
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', authData.user.id)
+            .single();
+
+          console.log('[Admin Register] User data:', userData);
+          console.log('[Admin Register] User error:', userError);
+
+          if (userData?.role === 'admin') {
+            console.log('[Admin Register] Admin role verified, navigating');
+            router.push('/admin/dashboard');
+            router.refresh();
+          } else {
+            console.log('[Admin Register] Admin role not set');
+            setError('Failed to set admin role. Please contact support.');
+            setIsLoading(false);
+          }
         } else {
+          // Email confirmation required
+          console.log('[Admin Register] Email confirmation required');
           router.push('/auth/success?type=signup&confirm=email&admin=true');
         }
       }
@@ -178,6 +222,7 @@ function AdminRegisterContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="admin@jejakathlete.com"
+            pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
             className="w-full px-4 py-3 bg-bg-elevated border border-border rounded-xl text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none transition-colors"
             required
           />

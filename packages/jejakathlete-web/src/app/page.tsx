@@ -1,6 +1,33 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 export default function Home() {
+  const [isClearing, setIsClearing] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleClearSessions = async () => {
+    setIsClearing(true);
+    setMessage(null);
+    
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        setMessage(`Error: ${error.message}`);
+      } else {
+        setMessage('All sessions cleared successfully!');
+      }
+    } catch (err) {
+      setMessage('Failed to clear sessions');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="text-center max-w-2xl">
@@ -30,6 +57,22 @@ export default function Home() {
           >
             Create Account
           </Link>
+        </div>
+
+        {/* Clear Sessions Button */}
+        <div className="mt-8 pt-8 border-t border-border">
+          <button
+            onClick={handleClearSessions}
+            disabled={isClearing}
+            className="px-6 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium rounded-lg transition-colors border border-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isClearing ? 'Clearing...' : 'Clear Sessions'}
+          </button>
+          {message && (
+            <p className={`mt-3 text-sm ${message.startsWith('Error') ? 'text-red-500' : 'text-green-500'}`}>
+              {message}
+            </p>
+          )}
         </div>
       </div>
     </div>
