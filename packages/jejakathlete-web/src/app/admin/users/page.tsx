@@ -14,6 +14,10 @@ interface User {
   is_verified: boolean;
   created_at: string;
   avatar_url: string | null;
+  user_profiling: {
+    avatar_url: string | null;
+  } | null;
+  sport: string | null;
 }
 
 type AuthState = 'loading' | 'authenticated' | 'access_denied';
@@ -27,6 +31,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [sportFilter, setSportFilter] = useState<string>('all');
+  const [availableSports, setAvailableSports] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -61,9 +67,50 @@ export default function AdminUsersPage() {
         .select('id, full_name, username, role, is_verified, created_at, avatar_url')
         .order('created_at', { ascending: false });
 
+      // Fetch all user profiling data to get avatars
+      const { data: profilingData } = await supabase
+        .from('user_profiling')
+        .select('user_id, avatar_url');
+
+      // Fetch all athletes data to get sports
+      const { data: athletesData } = await supabase
+        .from('athletes')
+        .select('user_id, sport');
+
+      // Create a map of user_id to avatar_url
+      const avatarMap = new Map<string, string | null>();
+      if (profilingData) {
+        profilingData.forEach(p => {
+          if (p.avatar_url) {
+            avatarMap.set(p.user_id, p.avatar_url);
+          }
+        });
+      }
+
+      // Create a map of user_id to sport
+      const sportMap = new Map<string, string>();
+      const sportsSet = new Set<string>();
+      if (athletesData) {
+        athletesData.forEach(a => {
+          if (a.sport) {
+            sportMap.set(a.user_id, a.sport);
+            sportsSet.add(a.sport);
+          }
+        });
+      }
+      setAvailableSports(Array.from(sportsSet).sort());
+
       if (allUsers) {
-        setUsers(allUsers);
-        setFilteredUsers(allUsers);
+        // Map users with their profiling avatar and sport
+        const mappedUsers = allUsers.map(u => ({
+          ...u,
+          user_profiling: avatarMap.has(u.id) 
+            ? { avatar_url: avatarMap.get(u.id) || null } 
+            : null,
+          sport: sportMap.get(u.id) || null
+        })) as User[];
+        setUsers(mappedUsers);
+        setFilteredUsers(mappedUsers);
       }
       setLoading(false);
     };
@@ -71,7 +118,7 @@ export default function AdminUsersPage() {
     checkAuthAndFetch();
   }, [router]);
 
-  // Filter users based on search and role
+  // Filter users based on search, role, and sport
   useEffect(() => {
     let filtered = users;
 
@@ -84,18 +131,24 @@ export default function AdminUsersPage() {
       }
     }
 
+    // Apply sport filter
+    if (sportFilter !== 'all') {
+      filtered = filtered.filter(u => u.sport === sportFilter);
+    }
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(u => 
         u.full_name?.toLowerCase().includes(query) ||
         u.username?.toLowerCase().includes(query) ||
-        u.id.toLowerCase().includes(query)
+        u.id.toLowerCase().includes(query) ||
+        u.sport?.toLowerCase().includes(query)
       );
     }
 
     setFilteredUsers(filtered);
-  }, [users, searchQuery, roleFilter]);
+  }, [users, searchQuery, roleFilter, sportFilter]);
 
   // Download all users to Excel with full details
   const handleDownloadAllUsers = async () => {
@@ -252,26 +305,38 @@ export default function AdminUsersPage() {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Search by name, username, or ID..."
+              placeholder="Search by name, username, sport, or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-3 bg-bg-secondary border border-border rounded-xl text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
             />
           </div>
-          <div className="flex gap-2">
-            {(['all', 'athlete', 'trainer', 'admin'] as RoleFilter[]).map((role) => (
-              <button
-                key={role}
-                onClick={() => setRoleFilter(role)}
-                className={`px-4 py-2 rounded-lg capitalize transition-colors ${
-                  roleFilter === role
-                    ? 'bg-accent text-white'
-                    : 'bg-bg-secondary border border-border text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                {role}
-              </button>
-            ))}
+          <div className="flex gap-3">
+            {/* Role Filter Dropdown */}
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+              className="px-4 py-3 bg-bg-secondary border border-border rounded-xl text-text-primary focus:border-accent focus:outline-none cursor-pointer min-w-[140px]"
+            >
+              <option value="all">All Roles</option>
+              <option value="athlete">Athlete</option>
+              <option value="trainer">Trainer</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            {/* Sport Filter Dropdown */}
+            <select
+              value={sportFilter}
+              onChange={(e) => setSportFilter(e.target.value)}
+              className="px-4 py-3 bg-bg-secondary border border-border rounded-xl text-text-primary focus:border-accent focus:outline-none cursor-pointer min-w-[160px]"
+            >
+              <option value="all">All Sports</option>
+              {availableSports.map((sport) => (
+                <option key={sport} value={sport}>
+                  {sport}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -307,8 +372,12 @@ export default function AdminUsersPage() {
                     <tr key={u.id} className="hover:bg-bg-elevated transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold">
-                            {u.full_name?.[0] || u.username?.[0] || '?'}
+                          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold overflow-hidden">
+                            {u.user_profiling?.avatar_url ? (
+                              <img src={u.user_profiling.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              u.full_name?.[0] || u.username?.[0] || '?'
+                            )}
                           </div>
                           <div>
                             <p className="font-medium text-text-primary">

@@ -103,6 +103,8 @@ export default function UserDetailPage() {
     gender: string;
     bio: string;
   }>({ phone: '', address: '', city: '', country: '', date_of_birth: '', gender: '', bio: '' });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Initialize form data when data loads
   useEffect(() => {
@@ -133,6 +135,7 @@ export default function UserDetailPage() {
         gender: profiling.gender || '',
         bio: profiling.bio || '',
       });
+      setAvatarPreview(profiling.avatar_url || null);
     }
   }, [profiling]);
 
@@ -242,6 +245,27 @@ export default function UserDetailPage() {
     try {
       const supabase = createSupabaseBrowserClient();
       
+      let avatarUrl = profiling?.avatar_url || null;
+
+      // Upload avatar if a new file is selected
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(filePath, avatarFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(filePath);
+
+        avatarUrl = publicUrl;
+      }
+
       const profilingData = {
         user_id: userId,
         phone: profilingForm.phone.trim() || null,
@@ -251,6 +275,7 @@ export default function UserDetailPage() {
         date_of_birth: profilingForm.date_of_birth || null,
         gender: profilingForm.gender.trim() || null,
         bio: profilingForm.bio.trim() || null,
+        avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
       };
 
@@ -271,7 +296,7 @@ export default function UserDetailPage() {
         date_of_birth: profilingForm.date_of_birth || null,
         gender: profilingForm.gender.trim() || null,
         bio: profilingForm.bio.trim() || null,
-        avatar_url: prev?.avatar_url || null,
+        avatar_url: avatarUrl,
         cover_image_url: prev?.cover_image_url || null,
         social_links: prev?.social_links || null,
         preferences: prev?.preferences || null,
@@ -279,6 +304,7 @@ export default function UserDetailPage() {
         updated_at: new Date().toISOString(),
       }));
       setIsEditingProfiling(false);
+      setAvatarFile(null);
       setSaveMessage({ type: 'success', text: 'User profiling updated successfully!' });
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
@@ -300,9 +326,12 @@ export default function UserDetailPage() {
         gender: profiling.gender || '',
         bio: profiling.bio || '',
       });
+      setAvatarPreview(profiling.avatar_url || null);
     } else {
       setProfilingForm({ phone: '', address: '', city: '', country: '', date_of_birth: '', gender: '', bio: '' });
+      setAvatarPreview(null);
     }
+    setAvatarFile(null);
     setIsEditingProfiling(false);
   };
 
@@ -511,8 +540,12 @@ export default function UserDetailPage() {
           </Link>
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent text-2xl font-bold">
-                {userData?.full_name?.[0] || userData?.username?.[0] || '?'}
+              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent text-2xl font-bold overflow-hidden">
+                {profiling?.avatar_url ? (
+                  <img src={profiling.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  userData?.full_name?.[0] || userData?.username?.[0] || '?'
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-text-primary">
@@ -554,6 +587,99 @@ export default function UserDetailPage() {
             <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
               <span>👤</span> Basic Information
             </h2>
+            
+            {/* Avatar with Camera Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center text-accent text-3xl font-bold overflow-hidden border-4 border-bg-tertiary">
+                  {avatarPreview || profiling?.avatar_url ? (
+                    <img 
+                      src={avatarPreview || profiling?.avatar_url || ''} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    userData?.full_name?.[0] || userData?.username?.[0] || '?'
+                  )}
+                </div>
+                {/* Camera Icon Overlay */}
+                <label
+                  htmlFor="basic-info-avatar-upload"
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-accent hover:bg-accent/90 rounded-full flex items-center justify-center cursor-pointer transition-colors shadow-lg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="basic-info-avatar-upload"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    // Show preview immediately
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setAvatarPreview(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Upload to Supabase
+                    try {
+                      setSaveMessage(null);
+                      const supabase = createSupabaseBrowserClient();
+                      
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+                      
+                      const { error: uploadError } = await supabase.storage
+                        .from('profile-photos')
+                        .upload(fileName, file);
+                      
+                      if (uploadError) throw uploadError;
+                      
+                      const { data: { publicUrl } } = supabase.storage
+                        .from('profile-photos')
+                        .getPublicUrl(fileName);
+                      
+                      // Update database
+                      const { error: updateError } = await supabase
+                        .from('user_profiling')
+                        .upsert({
+                          user_id: userId,
+                          avatar_url: publicUrl,
+                          updated_at: new Date().toISOString(),
+                        }, { onConflict: 'user_id' });
+                      
+                      if (updateError) throw updateError;
+                      
+                      // Update local state
+                      setProfiling(prev => prev ? { ...prev, avatar_url: publicUrl } : {
+                        user_id: userId,
+                        avatar_url: publicUrl,
+                        phone: null, address: null, city: null, country: null,
+                        date_of_birth: null, gender: null, bio: null,
+                        cover_image_url: null, social_links: null, preferences: null,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      });
+                      setAvatarPreview(publicUrl);
+                      setSaveMessage({ type: 'success', text: 'Profile photo updated!' });
+                      setTimeout(() => setSaveMessage(null), 3000);
+                    } catch (err) {
+                      console.error('Error uploading avatar:', err);
+                      setSaveMessage({ type: 'error', text: 'Failed to upload photo' });
+                      setAvatarPreview(profiling?.avatar_url || null);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
             <div className="space-y-3">
               <InfoRow label="User ID" value={userData?.id} mono />
               <InfoRow label="Full Name" value={userData?.full_name} />
@@ -583,6 +709,64 @@ export default function UserDetailPage() {
 
             {isEditingProfiling ? (
               <div className="space-y-4">
+                {/* Profile Photo Upload */}
+                <div>
+                  <label className="block text-sm text-text-secondary mb-2">Profile Photo</label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-bg-tertiary border-2 border-border">
+                      {avatarPreview ? (
+                        <img 
+                          src={avatarPreview} 
+                          alt="Profile preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-muted text-2xl">
+                          {userData?.full_name?.[0] || userData?.username?.[0] || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setAvatarFile(file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setAvatarPreview(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                        id="avatar-upload"
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className="inline-block px-4 py-2 bg-accent/10 text-accent rounded-lg cursor-pointer hover:bg-accent/20 transition-colors text-sm font-medium"
+                      >
+                        📷 Choose Photo
+                      </label>
+                      {avatarPreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarFile(null);
+                            setAvatarPreview(profiling?.avatar_url || null);
+                          }}
+                          className="ml-2 px-3 py-2 text-red-400 hover:text-red-300 text-sm"
+                        >
+                          Reset
+                        </button>
+                      )}
+                      <p className="text-xs text-text-muted mt-1">JPG, PNG or GIF. Max 2MB.</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Phone */}
                 <div>
                   <label className="block text-sm text-text-secondary mb-1">Phone</label>
@@ -697,6 +881,15 @@ export default function UserDetailPage() {
               </div>
             ) : profiling ? (
               <div className="space-y-3">
+                {/* Profile Photo Display */}
+                {profiling.avatar_url && (
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-bg-tertiary">
+                      <img src={profiling.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-sm text-text-secondary">Profile Photo</span>
+                  </div>
+                )}
                 <InfoRow label="Phone" value={profiling.phone} />
                 <InfoRow label="Gender" value={profiling.gender} />
                 <InfoRow label="Date of Birth" value={profiling.date_of_birth} />
