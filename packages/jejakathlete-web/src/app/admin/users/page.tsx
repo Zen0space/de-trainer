@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { exportAllUsersToExcel, UserExportData } from '@/lib/excel-export';
 
 interface User {
   id: string;
@@ -26,6 +27,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const checkAuthAndFetch = async () => {
@@ -95,6 +97,84 @@ export default function AdminUsersPage() {
     setFilteredUsers(filtered);
   }, [users, searchQuery, roleFilter]);
 
+  // Download all users to Excel with full details
+  const handleDownloadAllUsers = async () => {
+    setExporting(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      // Fetch all users with their details
+      const { data: allUsers } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!allUsers) {
+        setExporting(false);
+        return;
+      }
+
+      // Fetch all profiling data
+      const { data: allProfiling } = await supabase
+        .from('user_profiling')
+        .select('*');
+
+      // Fetch all athlete data
+      const { data: allAthletes } = await supabase
+        .from('athletes')
+        .select('*');
+
+      // Fetch all trainer data
+      const { data: allTrainers } = await supabase
+        .from('trainers')
+        .select('*');
+
+      // Create lookup maps for faster access
+      const profilingMap = new Map(allProfiling?.map(p => [p.user_id, p]) || []);
+      const athleteMap = new Map(allAthletes?.map(a => [a.user_id, a]) || []);
+      const trainerMap = new Map(allTrainers?.map(t => [t.user_id, t]) || []);
+
+      // Combine all data
+      const exportData: UserExportData[] = allUsers.map(user => {
+        const profiling = profilingMap.get(user.id);
+        const athlete = athleteMap.get(user.id);
+        const trainer = trainerMap.get(user.id);
+
+        return {
+          id: user.id,
+          full_name: user.full_name,
+          username: user.username,
+          role: user.role,
+          is_verified: user.is_verified,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          // Profiling data
+          phone: profiling?.phone,
+          address: profiling?.address,
+          city: profiling?.city,
+          country: profiling?.country,
+          date_of_birth: profiling?.date_of_birth,
+          gender: profiling?.gender,
+          bio: profiling?.bio,
+          // Athlete data
+          sport: athlete?.sport,
+          athlete_level: athlete?.level,
+          // Trainer data
+          trainer_code: trainer?.trainer_code,
+          certification_id: trainer?.certification_id,
+          specialization: trainer?.specialization,
+          verification_status: trainer?.verification_status,
+        };
+      });
+
+      exportAllUsersToExcel(exportData);
+    } catch (error) {
+      console.error('Error exporting users:', error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -147,6 +227,20 @@ export default function AdminUsersPage() {
                 {filteredUsers.length} of {users.length} users
               </p>
             </div>
+            <button
+              onClick={handleDownloadAllUsers}
+              disabled={exporting || loading}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              {exporting ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  Exporting...
+                </>
+              ) : (
+                <>📥 Download All Users</>
+              )}
+            </button>
           </div>
         </div>
       </header>

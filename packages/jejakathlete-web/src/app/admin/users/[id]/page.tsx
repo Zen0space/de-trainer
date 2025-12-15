@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { exportSingleUserToExcel, UserExportData } from '@/lib/excel-export';
 
 interface UserData {
   id: string;
@@ -305,6 +306,39 @@ export default function UserDetailPage() {
     setIsEditingProfiling(false);
   };
 
+  // Download user details as Excel
+  const handleDownloadExcel = () => {
+    if (!userData) return;
+
+    const exportData: UserExportData = {
+      id: userData.id,
+      full_name: userData.full_name,
+      username: userData.username,
+      role: userData.role,
+      is_verified: userData.is_verified,
+      created_at: userData.created_at,
+      updated_at: userData.updated_at,
+      // Profiling data
+      phone: profiling?.phone,
+      address: profiling?.address,
+      city: profiling?.city,
+      country: profiling?.country,
+      date_of_birth: profiling?.date_of_birth,
+      gender: profiling?.gender,
+      bio: profiling?.bio,
+      // Athlete data
+      sport: athleteData?.sport,
+      athlete_level: athleteData?.level,
+      // Trainer data
+      trainer_code: trainerData?.trainer_code,
+      certification_id: trainerData?.certification_id,
+      specialization: trainerData?.specialization,
+      verification_status: trainerData?.verification_status,
+    };
+
+    exportSingleUserToExcel(exportData);
+  };
+
   useEffect(() => {
     const checkAuthAndFetch = async () => {
       const supabase = createSupabaseBrowserClient();
@@ -475,19 +509,27 @@ export default function UserDetailPage() {
           <Link href="/admin/users" className="text-text-secondary hover:text-text-primary text-sm">
             ← Back to Users
           </Link>
-          <div className="flex items-center gap-4 mt-4">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent text-2xl font-bold">
-              {userData?.full_name?.[0] || userData?.username?.[0] || '?'}
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent text-2xl font-bold">
+                {userData?.full_name?.[0] || userData?.username?.[0] || '?'}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-text-primary">
+                  {userData?.full_name || 'No name'}
+                </h1>
+                <p className="text-text-secondary">@{userData?.username || 'no-username'}</p>
+              </div>
+              <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getRoleBadgeColor(userData?.role || '')}`}>
+                {userData?.role}
+              </span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-text-primary">
-                {userData?.full_name || 'No name'}
-              </h1>
-              <p className="text-text-secondary">@{userData?.username || 'no-username'}</p>
-            </div>
-            <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getRoleBadgeColor(userData?.role || '')}`}>
-              {userData?.role}
-            </span>
+            <button
+              onClick={handleDownloadExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              📥 Download Excel
+            </button>
           </div>
         </div>
       </header>
